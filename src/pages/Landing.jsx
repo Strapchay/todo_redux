@@ -3,6 +3,20 @@ import styles from "./Landing.module.css";
 import Modal from "../Modal";
 import LoginForm from "./forms/LoginForm";
 import RegisterForm from "./forms/RegisterForm";
+import { createContext } from "react";
+import { useState } from "react";
+import AuthForm from "./forms/AuthForm";
+
+export const SwitcherContext = createContext();
+
+function FormModalBox({ children }) {
+  const [currentForm, setCurrentForm] = useState("");
+  return (
+    <SwitcherContext.Provider value={{ currentForm, setCurrentForm }}>
+      {children}
+    </SwitcherContext.Provider>
+  );
+}
 
 function Landing() {
   useEffect(() => {
@@ -32,40 +46,42 @@ function Landing() {
                 Get your todos in order, seamlessly
               </p>
               <div className={styles["cta-section"]}>
-                <Modal>
-                  <ul className={styles["btn_list"]}>
-                    <Modal.Open opens="login-form">
-                      <li
-                        className={[
-                          styles.btn_link,
-                          styles["btn-sm"],
-                          styles["btn-login"],
-                          styles["bd-radius"],
-                        ].join(" ")}
-                      >
-                        Login
-                      </li>
-                    </Modal.Open>
-                    <Modal.Window name="login-form">
-                      <LoginForm />
-                    </Modal.Window>
+                <FormModalBox>
+                  <Modal>
+                    <ul className={styles["btn_list"]}>
+                      <Modal.Open opens="login-form">
+                        <li
+                          className={[
+                            styles.btn_link,
+                            styles["btn-sm"],
+                            styles["btn-login"],
+                            styles["bd-radius"],
+                          ].join(" ")}
+                        >
+                          Login
+                        </li>
+                      </Modal.Open>
+                      <Modal.Window name="login-form">
+                        <AuthForm formType="login" />
+                      </Modal.Window>
 
-                    <Modal.Open opens="signup-form">
-                      <li
-                        className={[
-                          styles.btn_link,
-                          styles["btn-create"],
-                          styles["bd-radius"],
-                        ].join(" ")}
-                      >
-                        Create Account
-                      </li>
-                    </Modal.Open>
-                    <Modal.Window name="signup-form">
-                      <RegisterForm />
-                    </Modal.Window>
-                  </ul>
-                </Modal>
+                      <Modal.Open opens="signup-form">
+                        <li
+                          className={[
+                            styles.btn_link,
+                            styles["btn-create"],
+                            styles["bd-radius"],
+                          ].join(" ")}
+                        >
+                          Create Account
+                        </li>
+                      </Modal.Open>
+                      <Modal.Window name="signup-form">
+                        <AuthForm formType="create" />
+                      </Modal.Window>
+                    </ul>
+                  </Modal>
+                </FormModalBox>
               </div>
             </div>
           </div>
