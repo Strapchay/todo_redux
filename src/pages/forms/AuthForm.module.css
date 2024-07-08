@@ -1,0 +1,73 @@
+.form-class {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2.8rem;
+}
+
+.form-box,
+.form-box > input {
+    width: 100%;
+}
+
+.form-box {
+    height: 3.4rem;
+}
+
+.form-box > input {
+    color: #ededed !important;
+    height: 100%;
+    border: none;
+    background-color: inherit;
+    border-bottom: 1px solid #aaa;
+}
+
+.form-box > input:focus {
+    outline: none;
+    box-shadow: 0px 0px 3px gray;
+}
+
+.form-box > input::placeholder {
+    color: #aaa;
+    font-size: 1.8rem;
+    text-transform: capitalize;
+}
+
+.btn-submit {
+    background-color: #ededed;
+    height: 3.4rem;
+    border-radius: 0.2rem;
+    border: none;
+    font-size: 1.8rem;
+}
+
+.login-container {
+    font-size: 1.6rem;
+    pointer-events: all;
+    position: relative;
+    height: 30rem;
+    width: 30rem;
+    background-color: #4b4b4b;
+    border-radius: 0.4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.4rem;
+    padding: 2.4rem 2.4rem;
+    overflow: scroll;
+}
+
+#login-form {
+}
+
+.form-field-error {
+    color: red;
+}
+
+.btn-reset {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4em;
+    color: #ededed;
+}
