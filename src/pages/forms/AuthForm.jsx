@@ -4,20 +4,21 @@ import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
 import { useEffect } from "react";
 import { SwitcherContext } from "../Landing";
+import ResetForm from "./ResetForm";
 
 function AuthForm({ formType }) {
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
-
+  const formsNotAcceptingSwitcher = ["reset", "reset_confirm"];
   useEffect(() => {
     setCurrentForm(formType);
   }, []);
 
   return (
     <div className={styles["login-container"]}>
-      <FormSwitcher />
+      {!formsNotAcceptingSwitcher.includes(currentForm) && <FormSwitcher />}
       {currentForm === "create" && <RegisterForm />}
       {currentForm === "login" && <LoginForm />}
-      {currentForm === "reset" && <div>Reset Form</div>}
+      {formsNotAcceptingSwitcher.includes(currentForm) && <ResetForm />}
       {["create", "login"].includes(currentForm) && (
         <button
           onClick={() => setCurrentForm("reset")}
