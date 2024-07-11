@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { arrayMove } from "../../../utils";
 
 const initialState = {
   todo: [],
@@ -69,6 +70,8 @@ const todoSlice = createSlice({
         const modState = [...state.todo];
         const currentTodo = state.todo[todoIndex];
         currentTodo.task = [...currentTodo.task, action.payload];
+        currentTodo.lastAdded = action.payload.todoLastAdded;
+
         modState.splice(todoIndex, 1, currentTodo);
         state.todo = modState;
       },
@@ -93,6 +96,7 @@ const todoSlice = createSlice({
           (task) => task.taskId === action.payload.taskId,
         );
         currentTodo.task.splice(currentTaskIndex, 1, action.payload);
+        currentTodo.lastAdded = action.payload.todoLastAdded;
         modState.splice(todoIndex, 1, currentTodo);
         state.todo = modState;
       },
@@ -110,6 +114,27 @@ const todoSlice = createSlice({
       modState.splice(todoIndex, 1, currentTodo);
       state.todo = modState;
     },
+    replaceTaskIndexForTodo(state, action) {
+      const todoIndex = state.todo.findIndex(
+        (todo) => todo.todoId === state.currentTodo,
+      );
+      const modState = [...state.todo];
+      const currentTodo = Object.assign({}, state.todo[todoIndex]);
+      const fromTaskIndex = currentTodo.task.findIndex(
+        (task) => task.taskId === action.payload.from,
+      );
+      const toTaskIndex = currentTodo.task.findIndex(
+        (task) => task.taskId === action.payload.to,
+      );
+      const currentTodoTasks = arrayMove(
+        currentTodo.task,
+        fromTaskIndex,
+        toTaskIndex,
+      );
+      currentTodo.task = currentTodoTasks;
+      modState.splice(todoIndex, 1, currentTodo);
+      state.todo = modState;
+    },
   },
 });
 
@@ -119,5 +144,6 @@ export const {
   createTaskForTodo,
   updateTaskForTodo,
   deleteTaskForTodo,
+  replaceTaskIndexForTodo,
 } = todoSlice.actions;
 export default todoSlice.reducer;
