@@ -50,6 +50,31 @@ const todoSlice = createSlice({
         state.todo = modState;
       },
     },
+    deleteTodo(state, action) {
+      const todoIndex = state.todo.findIndex(
+        (todo) => todo.todoId === action.payload.todoId,
+      );
+      const modState = [...state.todo];
+      modState.splice(todoIndex, 1);
+      state.todo = modState;
+      if (action.payload.todoId === state.currentTodo) state.currentTodo = null;
+    },
+    completeOrUncompleteTodo(state, action) {
+      const todoIndex = state.todo.findIndex(
+        (todo) => todo.todoId === state.currentTodo,
+      );
+      const modState = [...state.todo];
+      const currentTodo = modState[todoIndex];
+
+      if (!currentTodo.completed) {
+        currentTodo.completed = true;
+        currentTodo.task.forEach((task) => (task.completed = true));
+      } else {
+        currentTodo.completed = false;
+      }
+      modState.splice(todoIndex, 1, currentTodo);
+      state.todo = modState;
+    },
     replaceTodoIndex(state, action) {
       const fromTodoIndex = state.todo.findIndex(
         (todo) => todo.todoId === action.payload.from,
@@ -57,9 +82,7 @@ const todoSlice = createSlice({
       const toTodoIndex = state.todo.findIndex(
         (todo) => todo.todoId === action.payload.to,
       );
-      console.log("the from index to to index", fromTodoIndex, toTodoIndex);
       const modState = arrayMove(state.todo, fromTodoIndex, toTodoIndex);
-      console.log("the modState", modState);
       state.todo = modState;
     },
     createTaskForTodo: {
@@ -156,6 +179,8 @@ const todoSlice = createSlice({
 export const {
   createTodo,
   updateTodo,
+  deleteTodo,
+  completeOrUncompleteTodo,
   createTaskForTodo,
   updateTaskForTodo,
   deleteTaskForTodo,

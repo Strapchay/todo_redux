@@ -7,9 +7,11 @@ import { BiDotsVertical } from "react-icons/bi";
 import { HiXMark } from "react-icons/hi2";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  completeOrUncompleteTodo,
   createTaskForTodo,
   createTodo,
   deleteTaskForTodo,
+  deleteTodo,
   replaceTaskIndexForTodo,
   replaceTodoIndex,
   setCurrentTodo,
@@ -29,7 +31,6 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -169,12 +170,7 @@ function SortableTaskInput({ tasks, activeDict }) {
   );
 }
 
-function TaskContentRender({
-  initFormRendered,
-  // newTodoAdded,
-  // setNewTodoAdded,
-}) {
-  // const taskComponentTitleRef = useRef();
+function TaskContentRender({ initFormRendered }) {
   const {
     handleTitleUpdate,
     incompletedTasks,
@@ -197,7 +193,6 @@ function TaskContentRender({
         <div className={styles["td-render--content"]}>
           <div className={styles["td-render-component-title"]}>
             <div
-              // ref={taskComponentTitleRef}
               contentEditable={true}
               suppressContentEditableWarning={true}
               className={styles["td-render-title"]}
@@ -236,7 +231,14 @@ function TaskContentRender({
   );
 }
 
-function TodoListItem({ id, todo }) {
+function TodoListItem({
+  id,
+  todo,
+  currentTodo,
+  setInitFormRendered,
+  initFormRendered,
+  todoTasks,
+}) {
   const dispatch = useDispatch();
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -246,7 +248,6 @@ function TodoListItem({ id, todo }) {
   };
 
   function formatItemHeading() {
-    console.log("the todo title", todo);
     const todoTitle = todo?.title.length > 0 ? todo.title : ".";
     const retTitle = todoTitle.slice(0, 10).padEnd(13, ".");
     return retTitle;
@@ -254,6 +255,7 @@ function TodoListItem({ id, todo }) {
 
   function setTodoAsCurrentTodo() {
     dispatch(setCurrentTodo({ todoId: todo?.todoId }));
+    if (!initFormRendered) setInitFormRendered(true);
   }
 
   return (
@@ -270,12 +272,16 @@ function TodoListItem({ id, todo }) {
         <div className={styles["nudge-action--bar"]}>
           <div className={styles["nudge-action--container"]}>
             <ul className={styles["nudge-actions"]}>
-              {/* <!-- <li className="nudge-action--btn">Edit</li> --> */}
               <li
                 className={[
                   styles["nudge-action--btn"],
                   styles["nudge-action--delete"],
                 ].join(" ")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (todo?.todoId === currentTodo) setInitFormRendered(false);
+                  dispatch(deleteTodo({ todoId: todo?.todoId }));
+                }}
               >
                 Delete
               </li>
@@ -284,6 +290,10 @@ function TodoListItem({ id, todo }) {
                   styles["nudge-action--btn"],
                   styles["nudge-action--complete"],
                 ].join(" ")}
+                onClick={(e) => {
+                  // e.stopPropagation();
+                  dispatch(completeOrUncompleteTodo({ todoId: todo?.todoId }));
+                }}
               >
                 {todo?.completed ? "Unmark Complete" : "Mark Complete"}
               </li>
@@ -307,11 +317,21 @@ function TodoListItem({ id, todo }) {
       </div>
       <div className={styles["component-content-container"]}>
         <ul>
-          {todo?.task.slice(0, 3).map((task) => (
-            <div key={task.taskId} className={styles["component-content"]}>
-              <input type={"checkbox"} className={styles["td-complete"]} />
+          {todoTasks?.slice(0, 3).map((task) => (
+            <div key={task?.taskId} className={styles["component-content"]}>
+              <input
+                type="checkbox"
+                className={styles["td-complete"]}
+                checked={task.completed || false}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  dispatch(
+                    updateTaskForTodo({ ...task, completed: e.target.checked }),
+                  );
+                }}
+              />
               <label htmlFor="td-complete">
-                {task.task.slice(0, 15).padEnd(18, ".")}
+                {task?.task.slice(0, 15).padEnd(18, ".")}
               </label>
             </div>
           ))}
@@ -324,32 +344,29 @@ function TodoListItem({ id, todo }) {
   );
 }
 
-function TodoListRender({
-  initFormRendered,
-  setInitFormRendered,
-  // setNewTodoAdded,
-}) {
+function TodoListRender({ initFormRendered, setInitFormRendered }) {
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTodoDict, setActiveTodoDict] = useState({});
   const [formRendered, setFormRendered] = useState(false);
   const dispatch = useDispatch();
   const todos = useSelector((state) => state.todos.todo);
+  const currentTodo = useSelector((state) => state.todos.currentTodo);
 
   function handleAddTodoForm() {
     if (!initFormRendered) {
+      console.log("triggered create and render form");
       dispatch(createTodo());
       setInitFormRendered(true);
     }
     if (initFormRendered) {
+      console.log("triggered create new todo item");
       dispatch(createTodo());
-      // setNewTodoAdded(true);
     }
   }
 
   function handleDragStart(event) {
     const { active } = event;
     const todo = todos.find((todo) => todo.todoId === active.id);
-    console.log("the todo drag start", todo);
     setActiveTodoDict(todo);
   }
 
@@ -382,7 +399,15 @@ function TodoListRender({
               strategy={verticalListSortingStrategy}
             >
               {todos.map((todo) => (
-                <TodoListItem id={todo?.todoId} todo={todo} key={todo.todoId} />
+                <TodoListItem
+                  currentTodo={currentTodo}
+                  id={todo?.todoId}
+                  todo={todo}
+                  todoTasks={todo?.task}
+                  key={todo.todoId}
+                  setInitFormRendered={setInitFormRendered}
+                  initFormRendered={initFormRendered}
+                />
               ))}
             </SortableContext>
             <DragOverlay>
