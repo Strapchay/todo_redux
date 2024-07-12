@@ -31,6 +31,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useTaskRender } from "../hooks/useTaskRender";
 
 function Todo() {
   const [initFormRendered, setInitFormRendered] = useState(false);
@@ -158,81 +159,40 @@ function TaskAddInput({ id, task = null }) {
   );
 }
 
-function TaskContentRender({ initFormRendered }) {
-  const [title, setTitle] = useState("");
-  const [incompleteActiveDict, setIncompleteActiveDict] = useState(null);
-  const [completeActiveDict, setCompleteActiveDict] = useState(null);
-
-  const dispatch = useDispatch();
-  const sensors = useSensors(useSensor(PointerSensor));
-  const currentTodo = useSelector((state) =>
-    state.todos.todo.find((t) => t.todoId === state.todos.currentTodo),
+function SortableTaskInput({ tasks, activeDict }) {
+  const { sensors, handleDragEnd } = useTaskRender();
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
+        {tasks?.map((t) => (
+          <TaskAddInput id={t?.taskId} key={t?.taskId} task={t} />
+        ))}
+      </SortableContext>
+      <DragOverlay>
+        {activeDict ? (
+          <TaskAddInput id={activeDict.taskId} task={activeDict} />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
-  const incompletedTasks = currentTodo?.task.filter((task) => !task.completed);
-  const completedTasks = currentTodo?.task.filter((task) => task.completed);
-  const incompletedTasksIdList = incompletedTasks?.map((task) => task.taskId);
-  const completedTasksIdList = completedTasks?.map((task) => task.taskId);
+}
 
-  console.log("cur todo", currentTodo);
-  const contentVisibilityContainerRef = useRef();
-
-  function handleTitleUpdate(e) {
-    e.preventDefault();
-    if (e.key !== "Enter") setTitle(e.target.textContent.trim());
-    else {
-      dispatch(updateTodo({ ...currentTodo, title }));
-    }
-  }
-
-  function handleAddTask() {
-    dispatch(createTaskForTodo());
-  }
-
-  function handleDragStart(event) {
-    console.log("drag start event", event);
-    const { active } = event;
-
-    const isIncompletedTaskType = incompletedTasksIdList.includes(active.id)
-      ? true
-      : false;
-    const isCompletedTaskType = completedTasksIdList.includes(active.id)
-      ? true
-      : false;
-
-    const activeIncompletedTask =
-      isIncompletedTaskType &&
-      incompletedTasks.find((task) => task.taskId === active.id);
-
-    const activeCompletedTask =
-      isCompletedTaskType &&
-      completedTasks.find((task) => task.taskId === active.id);
-
-    activeIncompletedTask && setIncompleteActiveDict(activeIncompletedTask);
-    activeCompletedTask && setCompleteActiveDict(activeCompletedTask);
-  }
-
-  function handleDragEnd(event) {
-    const { active, over } = event;
-
-    if (active.id !== over.id) {
-      console.log(active);
-      console.log("the active and over id", active.id, over.id);
-      dispatch(replaceTaskIndexForTodo({ from: active.id, to: over.id }));
-    }
-    const isIncompletedTaskType = incompletedTasksIdList.includes(active.id)
-      ? true
-      : false;
-    const isCompletedTaskType = completedTasksIdList.includes(active.id)
-      ? true
-      : false;
-
-    isIncompletedTaskType && setIncompleteActiveDict({});
-    isCompletedTaskType && setCompleteActiveDict({});
-  }
+function TaskContentRender({ initFormRendered }) {
+  const {
+    handleTitleUpdate,
+    incompletedTasks,
+    completedTasks,
+    handleAddTask,
+    incompleteActiveDict,
+    completeActiveDict,
+  } = useTaskRender();
 
   return (
     <div
-      ref={contentVisibilityContainerRef}
       className={[
         styles["td-render--container"],
         styles[!initFormRendered ? "hidden" : ""],
@@ -251,33 +211,12 @@ function TaskContentRender({ initFormRendered }) {
             ></div>
           </div>
           <div className={styles["td-render-component-container"]}>
-            <div
-              // ref={contentContainerRef}
-              className={styles["td-render-component-container-content"]}
-            >
+            <div className={styles["td-render-component-container-content"]}>
               {incompletedTasks && (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={incompletedTasks}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {incompletedTasks?.map((t) => (
-                      <TaskAddInput id={t?.taskId} key={t?.taskId} task={t} />
-                    ))}
-                  </SortableContext>
-                  <DragOverlay>
-                    {incompleteActiveDict ? (
-                      <TaskAddInput
-                        id={incompleteActiveDict.taskId}
-                        task={incompleteActiveDict}
-                      />
-                    ) : null}
-                  </DragOverlay>
-                </DndContext>
+                <SortableTaskInput
+                  tasks={incompletedTasks}
+                  activeDict={incompleteActiveDict}
+                />
               )}
             </div>
             <div className={styles["add-td-component-content"]}>
@@ -287,28 +226,10 @@ function TaskContentRender({ initFormRendered }) {
             </div>
             <div className={styles["completed-td-component-content"]}>
               {completedTasks && (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={completedTasks}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {completedTasks?.map((t) => (
-                      <TaskAddInput id={t?.taskId} key={t?.taskId} task={t} />
-                    ))}
-                  </SortableContext>
-                  <DragOverlay>
-                    {completeActiveDict ? (
-                      <TaskAddInput
-                        id={completeActiveDict.taskId}
-                        task={completeActiveDict}
-                      />
-                    ) : null}
-                  </DragOverlay>
-                </DndContext>
+                <SortableTaskInput
+                  tasks={completedTasks}
+                  activeDict={completeActiveDict}
+                />
               )}
             </div>
           </div>
