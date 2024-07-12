@@ -50,6 +50,18 @@ const todoSlice = createSlice({
         state.todo = modState;
       },
     },
+    replaceTodoIndex(state, action) {
+      const fromTodoIndex = state.todo.findIndex(
+        (todo) => todo.todoId === action.payload.from,
+      );
+      const toTodoIndex = state.todo.findIndex(
+        (todo) => todo.todoId === action.payload.to,
+      );
+      console.log("the from index to to index", fromTodoIndex, toTodoIndex);
+      const modState = arrayMove(state.todo, fromTodoIndex, toTodoIndex);
+      console.log("the modState", modState);
+      state.todo = modState;
+    },
     createTaskForTodo: {
       prepare(payload) {
         const currentTime = Date.now();
@@ -135,6 +147,9 @@ const todoSlice = createSlice({
       modState.splice(todoIndex, 1, currentTodo);
       state.todo = modState;
     },
+    setCurrentTodo(state, action) {
+      state.currentTodo = action.payload.todoId;
+    },
   },
 });
 
@@ -145,5 +160,7 @@ export const {
   updateTaskForTodo,
   deleteTaskForTodo,
   replaceTaskIndexForTodo,
+  setCurrentTodo,
+  replaceTodoIndex,
 } = todoSlice.actions;
 export default todoSlice.reducer;

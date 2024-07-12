@@ -81,7 +81,9 @@ export function useTaskRender() {
     handleAddTask,
     sensors,
     handleDragEnd,
+    handleDragStart,
     completeActiveDict,
     incompleteActiveDict,
+    currentTodo,
   };
 }

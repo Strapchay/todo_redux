@@ -3,6 +3,7 @@ import styles from "./Todo.module.css";
 import { useState } from "react";
 import { useRef } from "react";
 import { BiGridVertical } from "react-icons/bi";
+import { BiDotsVertical } from "react-icons/bi";
 import { HiXMark } from "react-icons/hi2";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -10,6 +11,8 @@ import {
   createTodo,
   deleteTaskForTodo,
   replaceTaskIndexForTodo,
+  replaceTodoIndex,
+  setCurrentTodo,
   updateTaskForTodo,
   updateTodo,
 } from "../slices/todo/todoSlice";
@@ -32,11 +35,10 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useTaskRender } from "../hooks/useTaskRender";
+import { formatEditDate } from "../../utils";
 
 function Todo() {
   const [initFormRendered, setInitFormRendered] = useState(false);
-  const [formRendered, setFormRendered] = useState(false);
-  const dispatch = useDispatch();
 
   useEffect(() => {
     document.documentElement.classList.add("html");
@@ -47,13 +49,6 @@ function Todo() {
       document.body.classList.remove("body");
     };
   }, []);
-
-  function handleAddTodoForm() {
-    if (!initFormRendered) {
-      dispatch(createTodo());
-      setInitFormRendered(true);
-    }
-  }
 
   return (
     <div className={[styles["container"], styles["todo-active"]].join(" ")}>
@@ -70,18 +65,10 @@ function Todo() {
 
       <div className={styles["row"]}>
         <div className={styles["td-row"]}>
-          <div className={styles["td-component--container"]}>
-            <div
-              onClick={handleAddTodoForm}
-              className={styles["td-render-todo--add-btn"]}
-            >
-              + Add Todo
-            </div>
-            <div
-              className={styles["component-container"]}
-              id="component-container"
-            ></div>
-          </div>
+          <TodoListRender
+            initFormRendered={initFormRendered}
+            setInitFormRendered={setInitFormRendered}
+          />
           <TaskContentRender initFormRendered={initFormRendered} />
         </div>
       </div>
@@ -160,12 +147,13 @@ function TaskAddInput({ id, task = null }) {
 }
 
 function SortableTaskInput({ tasks, activeDict }) {
-  const { sensors, handleDragEnd } = useTaskRender();
+  const { sensors, handleDragEnd, handleDragStart } = useTaskRender();
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
+      onDragStart={handleDragStart}
     >
       <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
         {tasks?.map((t) => (
@@ -181,7 +169,12 @@ function SortableTaskInput({ tasks, activeDict }) {
   );
 }
 
-function TaskContentRender({ initFormRendered }) {
+function TaskContentRender({
+  initFormRendered,
+  // newTodoAdded,
+  // setNewTodoAdded,
+}) {
+  // const taskComponentTitleRef = useRef();
   const {
     handleTitleUpdate,
     incompletedTasks,
@@ -189,6 +182,7 @@ function TaskContentRender({ initFormRendered }) {
     handleAddTask,
     incompleteActiveDict,
     completeActiveDict,
+    currentTodo,
   } = useTaskRender();
 
   return (
@@ -203,12 +197,15 @@ function TaskContentRender({ initFormRendered }) {
         <div className={styles["td-render--content"]}>
           <div className={styles["td-render-component-title"]}>
             <div
+              // ref={taskComponentTitleRef}
               contentEditable={true}
               suppressContentEditableWarning={true}
               className={styles["td-render-title"]}
               placeholder="Untitled"
               onKeyUp={handleTitleUpdate}
-            ></div>
+            >
+              {currentTodo?.title}
+            </div>
           </div>
           <div className={styles["td-render-component-container"]}>
             <div className={styles["td-render-component-container-content"]}>
@@ -234,6 +231,167 @@ function TaskContentRender({ initFormRendered }) {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TodoListItem({ id, todo }) {
+  const dispatch = useDispatch();
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  function formatItemHeading() {
+    console.log("the todo title", todo);
+    const todoTitle = todo?.title.length > 0 ? todo.title : ".";
+    const retTitle = todoTitle.slice(0, 10).padEnd(13, ".");
+    return retTitle;
+  }
+
+  function setTodoAsCurrentTodo() {
+    dispatch(setCurrentTodo({ todoId: todo?.todoId }));
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={styles["component-container--box"]}
+      data-id={todo?.todoId}
+      onClick={setTodoAsCurrentTodo}
+    >
+      <span className={styles["nudge-btn"]}>
+        <BiDotsVertical size={20} />
+        <div className={styles["nudge-action--bar"]}>
+          <div className={styles["nudge-action--container"]}>
+            <ul className={styles["nudge-actions"]}>
+              {/* <!-- <li className="nudge-action--btn">Edit</li> --> */}
+              <li
+                className={[
+                  styles["nudge-action--btn"],
+                  styles["nudge-action--delete"],
+                ].join(" ")}
+              >
+                Delete
+              </li>
+              <li
+                className={[
+                  styles["nudge-action--btn"],
+                  styles["nudge-action--complete"],
+                ].join(" ")}
+              >
+                {todo?.completed ? "Unmark Complete" : "Mark Complete"}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </span>
+
+      <div className={styles["component-header"]}>
+        <div className={styles["draggable-component-btn"]} {...listeners}>
+          <BiGridVertical size={20} />
+        </div>
+        <h3
+          className={[
+            styles["component-heading"],
+            styles[todo?.completed ? "strike-through-task" : ""],
+          ].join(" ")}
+        >
+          {formatItemHeading(todo)}
+        </h3>
+      </div>
+      <div className={styles["component-content-container"]}>
+        <ul>
+          {todo?.task.slice(0, 3).map((task) => (
+            <div key={task.taskId} className={styles["component-content"]}>
+              <input type={"checkbox"} className={styles["td-complete"]} />
+              <label htmlFor="td-complete">
+                {task.task.slice(0, 15).padEnd(18, ".")}
+              </label>
+            </div>
+          ))}
+        </ul>
+        <p className={styles["component-editted-bar"]}>
+          {formatEditDate(todo?.lastAdded)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function TodoListRender({
+  initFormRendered,
+  setInitFormRendered,
+  // setNewTodoAdded,
+}) {
+  const sensors = useSensors(useSensor(PointerSensor));
+  const [activeTodoDict, setActiveTodoDict] = useState({});
+  const [formRendered, setFormRendered] = useState(false);
+  const dispatch = useDispatch();
+  const todos = useSelector((state) => state.todos.todo);
+
+  function handleAddTodoForm() {
+    if (!initFormRendered) {
+      dispatch(createTodo());
+      setInitFormRendered(true);
+    }
+    if (initFormRendered) {
+      dispatch(createTodo());
+      // setNewTodoAdded(true);
+    }
+  }
+
+  function handleDragStart(event) {
+    const { active } = event;
+    const todo = todos.find((todo) => todo.todoId === active.id);
+    console.log("the todo drag start", todo);
+    setActiveTodoDict(todo);
+  }
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      dispatch(replaceTodoIndex({ from: active.id, to: over.id }));
+    }
+    setActiveTodoDict({});
+  }
+
+  return (
+    <div className={styles["td-component--container"]}>
+      <div
+        onClick={handleAddTodoForm}
+        className={styles["td-render-todo--add-btn"]}
+      >
+        + Add Todo
+      </div>
+      <div className={styles["component-container"]} id="component-container">
+        {todos.length > 0 && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            onDragStart={handleDragStart}
+          >
+            <SortableContext
+              items={todos}
+              strategy={verticalListSortingStrategy}
+            >
+              {todos.map((todo) => (
+                <TodoListItem id={todo?.todoId} todo={todo} key={todo.todoId} />
+              ))}
+            </SortableContext>
+            <DragOverlay>
+              {activeTodoDict ? (
+                <TodoListItem todo={activeTodoDict} id={activeTodoDict.id} />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
       </div>
     </div>
   );
