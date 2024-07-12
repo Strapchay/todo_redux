@@ -290,10 +290,9 @@ function TodoListItem({
                   styles["nudge-action--btn"],
                   styles["nudge-action--complete"],
                 ].join(" ")}
-                onClick={(e) => {
-                  // e.stopPropagation();
-                  dispatch(completeOrUncompleteTodo({ todoId: todo?.todoId }));
-                }}
+                onClick={() =>
+                  dispatch(completeOrUncompleteTodo({ todoId: todo?.todoId }))
+                }
               >
                 {todo?.completed ? "Unmark Complete" : "Mark Complete"}
               </li>
@@ -318,7 +317,13 @@ function TodoListItem({
       <div className={styles["component-content-container"]}>
         <ul>
           {todoTasks?.slice(0, 3).map((task) => (
-            <div key={task?.taskId} className={styles["component-content"]}>
+            <div
+              key={task?.taskId}
+              className={[
+                styles["component-content"],
+                styles[task?.completed ? "strike-through-task" : ""],
+              ].join(" ")}
+            >
               <input
                 type="checkbox"
                 className={styles["td-complete"]}
