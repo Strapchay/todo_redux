@@ -286,10 +286,30 @@ function TaskContentRender({ initFormRendered }) {
               </span>
             </div>
             <div className={styles["completed-td-component-content"]}>
-              {completedTasks &&
-                completedTasks.map((task) => (
-                  <TaskAddInput key={task?.taskId} task={task} />
-                ))}
+              {completedTasks && (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={completedTasks}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {completedTasks?.map((t) => (
+                      <TaskAddInput id={t?.taskId} key={t?.taskId} task={t} />
+                    ))}
+                  </SortableContext>
+                  <DragOverlay>
+                    {completeActiveDict ? (
+                      <TaskAddInput
+                        id={completeActiveDict.taskId}
+                        task={completeActiveDict}
+                      />
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
+              )}
             </div>
           </div>
         </div>
