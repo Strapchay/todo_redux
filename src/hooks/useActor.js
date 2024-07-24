@@ -1,23 +1,22 @@
 import toast from "react-hot-toast";
 import { makeAPIRequest } from "../helpers";
 
-export function useAuth(authUrl, formReset, formAction, token = null) {
+export function useActor(actionUrl, action, token = null, method = "GET") {
   async function handleRequest(payload, extraActions) {
     try {
       const data = await makeAPIRequest(
-        authUrl,
+        actionUrl,
         payload,
-        formAction,
+        action,
         token,
-        "POST",
+        method,
       );
       if (data) {
-        formReset();
         if (extraActions?.onSuccess) extraActions.onSuccess(data);
       }
     } catch (err) {
-      toast.error(err.message);
       if (extraActions?.onError) extraActions.onError();
+      throw new Error(err.message);
     }
   }
 

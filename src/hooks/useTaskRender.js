@@ -1,14 +1,19 @@
 import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  APICreateTodoTask,
+  APIUpdateTodoTitle,
   createTaskForTodo,
   replaceTaskIndexForTodo,
   updateTodo,
 } from "../slices/todo/todoSlice";
+import { TodoContext } from "../pages/Todo";
 
 export function useTaskRender() {
+  const { token } = useContext(TodoContext);
   const [title, setTitle] = useState("");
+
   const [incompleteActiveDict, setIncompleteActiveDict] = useState(null);
   const [completeActiveDict, setCompleteActiveDict] = useState(null);
 
@@ -18,8 +23,8 @@ export function useTaskRender() {
     state.todos.todo.find((t) => t.todoId === state.todos.currentTodo),
   );
 
-  const incompletedTasks = currentTodo?.task.filter((task) => !task.completed);
-  const completedTasks = currentTodo?.task.filter((task) => task.completed);
+  const incompletedTasks = currentTodo?.task?.filter((task) => !task.completed);
+  const completedTasks = currentTodo?.task?.filter((task) => task.completed);
   const incompletedTasksIdList = incompletedTasks?.map((task) => task.taskId);
   const completedTasksIdList = completedTasks?.map((task) => task.taskId);
 
@@ -28,11 +33,14 @@ export function useTaskRender() {
     if (e.key !== "Enter") setTitle(e.target.textContent.trim());
     else {
       dispatch(updateTodo({ ...currentTodo, title }));
+      dispatch(
+        APIUpdateTodoTitle({ token, title, todoId: currentTodo.todoId }),
+      );
     }
   }
 
   function handleAddTask() {
-    dispatch(createTaskForTodo());
+    dispatch(APICreateTodoTask({ token, todoId: currentTodo.todoId }));
   }
 
   function handleDragStart(event) {

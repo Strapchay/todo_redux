@@ -27,15 +27,21 @@ export function getInitError(data) {
   return data;
 }
 
+export const formatDateTime = (dateTime) => {
+  return new Date(dateTime);
+};
+
 export async function makeAPIRequest(
   url,
   payload = null,
   action = null,
   token = null,
+  method = "GET",
+  extraActions = null,
 ) {
   try {
     const prepare = {
-      method: "POST",
+      method: method,
       headers: {
         "Content-Type": "application/json",
       },
@@ -51,8 +57,12 @@ export async function makeAPIRequest(
     const data = await res.json();
     if (!res.ok || !successCodes.includes(res.status))
       throw new Error(getInitError(data));
+
+    if (extraActions) extraActions.onSuccess(data);
     return data;
   } catch (err) {
+    console.log("triggered the error", err);
+    if (extraActions) extraActions.onError();
     throw new Error(err.message);
   }
   //`${ALERT_STATUS_ERRORS.find(s => s === res.status) ? }`
@@ -75,4 +85,147 @@ export const timeoutWithoutPromise = (sec, fn) => {
       resolve(fn());
     }, sec * 1000);
   });
+};
+
+const formatAPITodoTasks = (APITasks, formatType) => {
+  if (APITasks.length > 0) {
+    const APItaskList = [];
+    APITasks.forEach((task) =>
+      APItaskList.push(formatAPIResponseBody(task, formatType)),
+    );
+    const orderedTaskList = APItaskList.sort(
+      (a, d) => a?.ordering - d?.ordering,
+    );
+    if (!orderedTaskList) return APItaskList;
+    return orderedTaskList;
+  }
+
+  // return [formatAPIResponseBody(APITasks[0], formatType)]
+  return APITasks;
+};
+
+const formatAPIRequestTodoTasks = (APIRequestTasks, formatType) => {
+  if (APIRequestTasks.length > 0) {
+    const APItaskList = [];
+    APIRequestTasks.forEach((task) =>
+      APItaskList.push(formatAPIRequestBody(task, formatType)),
+    );
+    return APItaskList;
+
+    //implement task todo request formatting
+  }
+  return APIRequestTasks;
+  //return [formatAPIRequestBody(APIRequestTasks[0], formatType)]
+};
+
+export const formatAPIResponseBody = (responseBody, type, fallback = false) => {
+  let formattedBody;
+  if (fallback) return responseBody;
+
+  if (type === "todo")
+    formattedBody = {
+      todoId: responseBody.id,
+      title: responseBody.title,
+      task: formatAPITodoTasks(responseBody.tasks, "todoTask"),
+      lastAdded: formatDateTime(responseBody.last_added).toISOString(),
+      completed: responseBody.completed,
+      ordering: responseBody.ordering,
+    };
+
+  if (type === "task")
+    formattedBody = {
+      taskId: responseBody.id,
+      task: responseBody.task,
+      completed: responseBody.completed,
+      todoId: responseBody.todo_id,
+      todoLastAdded: responseBody.todo_last_added,
+      ordering: responseBody.ordering,
+    };
+
+  if (type === "todoTask")
+    formattedBody = {
+      taskId: responseBody.id,
+      task: responseBody.task,
+      completed: responseBody.completed,
+      ordering: responseBody.ordering ?? null,
+    };
+  return formattedBody;
+};
+
+export const formatAPIRequestBody = (
+  requestBody,
+  type,
+  optionalType = undefined,
+) => {
+  // debugger;
+  let formattedBody;
+
+  if (![requestBody].length > 0) return requestBody;
+
+  if (type === "todo") {
+    formattedBody = {};
+    if (requestBody.title || requestBody?.title?.length === 0)
+      formattedBody.title = requestBody.title;
+    if (optionalType === "update") {
+      formattedBody.id = requestBody.todoId;
+      formattedBody.completed = requestBody.completed;
+    }
+
+    if (optionalType !== "update") {
+      formattedBody.tasks = formatAPIRequestTodoTasks(
+        requestBody.tasks,
+        "todoTask",
+      );
+      formattedBody.last_added = requestBody.lastAdded;
+      formattedBody.completed = requestBody.completed;
+    }
+  }
+
+  if (type === "todoTask")
+    formattedBody = {
+      task: requestBody.task,
+      completed: requestBody.completed,
+    };
+
+  if (type === "task") {
+    formattedBody = {
+      task: requestBody.task ?? null,
+      completed: requestBody.completed ?? null,
+    };
+    if (optionalType === "create") formattedBody.todo_id = requestBody.todoId;
+    if (optionalType === "update") {
+      formattedBody.id = requestBody.taskId;
+      formattedBody.todo_last_added = requestBody.todoLastAdded;
+    }
+  }
+
+  return formattedBody;
+};
+
+export const formatAPIPayloadForUpdateReorder = function (payload, type) {
+  let requestObj;
+
+  if (type === "tasks") {
+    const listItems = [];
+
+    payload.tasks.forEach((task, i) =>
+      listItems.push({ id: task.taskId, ordering: i + 1 }),
+    );
+    requestObj = {
+      ordering_list: listItems,
+    };
+  }
+
+  if (type === "todos") {
+    const listItems = [];
+
+    payload.forEach((todo, i) =>
+      listItems.push({ id: todo.todoId, ordering: i + 1 }),
+    );
+    requestObj = {
+      ordering_list: listItems,
+    };
+  }
+
+  return requestObj;
 };

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
 import styles from "./Todo.module.css";
 import { useState } from "react";
 import { useRef } from "react";
@@ -7,6 +7,9 @@ import { BiDotsVertical } from "react-icons/bi";
 import { HiXMark } from "react-icons/hi2";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  APICreateTodo,
+  APIUpdateTodoComplete,
+  APIUpdateTodoTask,
   completeOrUncompleteTodo,
   createTaskForTodo,
   createTodo,
@@ -14,6 +17,8 @@ import {
   deleteTodo,
   replaceTaskIndexForTodo,
   replaceTodoIndex,
+  selectAllTodos,
+  selectCurrentTodo,
   setCurrentTodo,
   updateTaskForTodo,
   updateTodo,
@@ -37,6 +42,17 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useTaskRender } from "../hooks/useTaskRender";
 import { formatEditDate } from "../../utils";
+import { useLocalStorageState } from "../hooks/useLocalStorageState";
+
+export const TodoContext = createContext();
+
+function TodoTokenProvider({ children }) {
+  const [token, setToken] = useLocalStorageState(null, "token");
+
+  return (
+    <TodoContext.Provider value={{ token }}>{children}</TodoContext.Provider>
+  );
+}
 
 function Todo() {
   const [initFormRendered, setInitFormRendered] = useState(false);
@@ -65,19 +81,22 @@ function Todo() {
       </header>
 
       <div className={styles["row"]}>
-        <div className={styles["td-row"]}>
-          <TodoListRender
-            initFormRendered={initFormRendered}
-            setInitFormRendered={setInitFormRendered}
-          />
-          <TaskContentRender initFormRendered={initFormRendered} />
-        </div>
+        <TodoTokenProvider>
+          <div className={styles["td-row"]}>
+            <TodoListRender
+              initFormRendered={initFormRendered}
+              setInitFormRendered={setInitFormRendered}
+            />
+            <TaskContentRender initFormRendered={initFormRendered} />
+          </div>
+        </TodoTokenProvider>
       </div>
     </div>
   );
 }
 
 function TaskAddInput({ id, task = null }) {
+  const { token } = useContext(TodoContext);
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const style = {
@@ -90,12 +109,13 @@ function TaskAddInput({ id, task = null }) {
   function handleTaskUpdate(e) {
     if (e.type === "keyup" && e.key === "Enter") {
       e.preventDefault();
-      dispatch(
-        updateTaskForTodo({ ...task, task: e.target.textContent.trim() }),
-      );
+      const payload = { ...task, task: e.target.textContent.trim() };
+      dispatch(updateTaskForTodo(payload));
+      dispatch(APIUpdateTodoTask({ token, task: payload }));
     }
     if (e.type === "change") {
-      dispatch(updateTaskForTodo({ ...task, completed: e.target.checked }));
+      const payload = { ...task, completed: e.target.checked };
+      dispatch(updateTaskForTodo(payload));
     }
   }
 
@@ -240,6 +260,7 @@ function TodoListItem({
   todoTasks,
 }) {
   const dispatch = useDispatch();
+  const { token } = useContext(TodoContext);
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const style = {
@@ -290,9 +311,16 @@ function TodoListItem({
                   styles["nudge-action--btn"],
                   styles["nudge-action--complete"],
                 ].join(" ")}
-                onClick={() =>
-                  dispatch(completeOrUncompleteTodo({ todoId: todo?.todoId }))
-                }
+                onClick={() => {
+                  dispatch(
+                    APIUpdateTodoComplete({
+                      token,
+                      completed: !todo?.completed,
+                      todoId: todo?.todoId,
+                    }),
+                  );
+                  dispatch(completeOrUncompleteTodo({ todoId: todo?.todoId }));
+                }}
               >
                 {todo?.completed ? "Unmark Complete" : "Mark Complete"}
               </li>
@@ -350,23 +378,20 @@ function TodoListItem({
 }
 
 function TodoListRender({ initFormRendered, setInitFormRendered }) {
+  const { token } = useContext(TodoContext);
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTodoDict, setActiveTodoDict] = useState({});
   const [formRendered, setFormRendered] = useState(false);
   const dispatch = useDispatch();
-  const todos = useSelector((state) => state.todos.todo);
-  const currentTodo = useSelector((state) => state.todos.currentTodo);
+  const todos = useSelector(selectAllTodos);
+  const currentTodo = useSelector(selectCurrentTodo);
 
   function handleAddTodoForm() {
     if (!initFormRendered) {
-      console.log("triggered create and render form");
-      dispatch(createTodo());
+      dispatch(APICreateTodo(token));
       setInitFormRendered(true);
     }
-    if (initFormRendered) {
-      console.log("triggered create new todo item");
-      dispatch(createTodo());
-    }
+    if (initFormRendered) dispatch(APICreateTodo(token));
   }
 
   function handleDragStart(event) {
