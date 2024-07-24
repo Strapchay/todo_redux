@@ -20,9 +20,7 @@ const diffSlice = createSlice({
   reducers: {
     todoToCreate(state, action) {
       const toCreates = [...state.todoToCreate, action.payload.todoId];
-      console.log("the tocreates", toCreates);
       const uniqueToCreates = new Set(toCreates);
-      console.log("the uniqueto cr", uniqueToCreates);
       state.todoToCreate = [...uniqueToCreates];
     },
     todoToUpdate(state, action) {
@@ -36,6 +34,12 @@ const diffSlice = createSlice({
           ...action.payload,
         };
       else state.todoToUpdate.push(action.payload);
+    },
+    todoToDelete(state, action) {
+      state.todoToDelete.push(action.payload.todoId);
+    },
+    todoOrdering(state, action) {
+      state.todoOrdering = action.payload.ordering_list;
     },
     taskToCreate(state, action) {
       const taskExists = state.taskToCreate.findIndex(
@@ -56,6 +60,12 @@ const diffSlice = createSlice({
         };
       else state.taskToUpdate.push(action.payload);
     },
+    taskToDelete(state, action) {
+      state.taskToDelete.push(action.payload);
+    },
+    taskOrdering(state, action) {
+      state.taskOrdering = action.payload.ordering_list;
+    },
   },
   // extraReducers(builder) {
   // builder.addCase(APICreateTodo.rejected, (state, action) => {
@@ -66,5 +76,13 @@ const diffSlice = createSlice({
 });
 
 export default diffSlice.reducer;
-export const { todoToCreate, todoToUpdate, taskToCreate, taskToUpdate } =
-  diffSlice.actions;
+export const {
+  todoToCreate,
+  todoToUpdate,
+  todoToDelete,
+  todoOrdering,
+  taskToCreate,
+  taskToUpdate,
+  taskToDelete,
+  taskOrdering,
+} = diffSlice.actions;

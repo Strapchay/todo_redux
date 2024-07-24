@@ -18,9 +18,29 @@ import { ALERT_STATUS_ERRORS, BASE_API_URL, successCodes } from "./constants";
 //   })()
 // }
 //
+async function getDeleteRes(data, requestType) {
+  if (requestType === "deleteTask") return null;
+  if (requestType === "deleteTodo") {
+    let res;
+    try {
+      res = await data.json();
+    } catch (_) {
+      res = null;
+    }
+
+    if (res && res?.detail.toLowerCase() === "not found.")
+      return { status: 405 };
+
+    return res;
+  }
+}
+
 export function getInitError(data) {
+  console.log("theye of data", typeof data);
+  console.log("theye of data", data);
   if (typeof data === "object") {
     const errorKeys = Object.keys(data);
+    console.log("the error keys", errorKeys);
     if (errorKeys.length === 1) return `${errorKeys}:${data[errorKeys]}`;
     else return `${errorKeys[0]}:${data[errorKeys[0]]}`;
   }
@@ -54,15 +74,17 @@ export async function makeAPIRequest(
       fetch(BASE_API_URL + url, prepare),
       timeout(20, action),
     ]);
-    const data = await res.json();
-    if (!res.ok || !successCodes.includes(res.status))
+    const data =
+      method !== "DELETE" ? await res.json() : await getDeleteRes(res, action);
+    if (!res.ok || !successCodes.includes(res.status)) {
       throw new Error(getInitError(data));
-
+    }
     if (extraActions) extraActions.onSuccess(data);
     return data;
   } catch (err) {
     console.log("triggered the error", err);
-    if (extraActions) extraActions.onError();
+    if (extraActions)
+      extraActions.onError(action === "deleteTodo" ? err.message : null);
     throw new Error(err.message);
   }
   //`${ALERT_STATUS_ERRORS.find(s => s === res.status) ? }`

@@ -3,9 +3,13 @@ import { arrayMove } from "../../../utils";
 import { formatAPIResponseBody, makeAPIRequest } from "../../helpers";
 import { API } from "../../api";
 import {
+  taskOrdering,
   taskToCreate,
+  taskToDelete,
   taskToUpdate,
+  todoOrdering,
   todoToCreate,
+  todoToDelete,
   todoToUpdate,
 } from "./diffSlice";
 
@@ -73,7 +77,7 @@ const todoSlice = createSlice({
 
       if (!currentTodo.completed) {
         currentTodo.completed = true;
-        if (currentTodo.tasks.length > 0)
+        if (currentTodo?.tasks?.length > 0)
           currentTodo?.task.forEach((task) => (task.completed = true));
       } else {
         currentTodo.completed = false;
@@ -282,6 +286,57 @@ export const APIUpdateTodoComplete = createAsyncThunk(
   },
 );
 
+export const APIDeleteTodo = createAsyncThunk(
+  "todo/APIDeleteTodo",
+  async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
+    const res = await makeAPIRequest(
+      API.APIEnum.TODO.DELETE(todoId),
+      null,
+      "deleteTodo",
+      token.token,
+      "DELETE",
+      {
+        onSuccess: (_) => {},
+        onError: (err) => {
+          const errContainsStatus =
+            err?.includes("status") && err.split(":")[1];
+          if (errContainsStatus && Number(errContainsStatus) === 405) return;
+          else dispatch(todoToDelete({ todoId }));
+        },
+      },
+    );
+    return res;
+  },
+);
+
+export const APIUpdateTodoIndex = createAsyncThunk(
+  "todo/APIUpdateTodoIndex",
+  async (token, { dispatch, getState, rejectWithValue }) => {
+    const todos = getState().todos.todo;
+    const listItems = [];
+    todos.forEach((todo, i) =>
+      listItems.push({ id: todo.todoId, ordering: i + 1 }),
+    );
+
+    const payload = { ordering_list: listItems };
+
+    const res = await makeAPIRequest(
+      API.APIEnum.TODO.BATCH_UPDATE_ORDERING,
+      payload,
+      "updateTodo",
+      token.token,
+      "PATCH",
+      {
+        onSuccess: () => {},
+        onError: (_) => {
+          dispatch(todoOrdering(payload));
+        },
+      },
+    );
+    return res;
+  },
+);
+
 export const APICreateTodoTask = createAsyncThunk(
   "todo/APICreateTodoTask",
   async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
@@ -320,7 +375,7 @@ export const APIUpdateTodoTask = createAsyncThunk(
   "todo/APIUpdateTodoTask",
   async ({ token, task }, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.PATCH(783278373),
+      API.APIEnum.TASK.PATCH(task.taskId),
       { ...task },
       "updateTodo",
       token.token,
@@ -339,6 +394,61 @@ export const APIUpdateTodoTask = createAsyncThunk(
             todoLastAdded: currentTodo.lastAdded,
           };
           dispatch(taskToUpdate(payload));
+        },
+      },
+    );
+    return res;
+  },
+);
+
+export const APIDeleteTodoTask = createAsyncThunk(
+  "todo/APIDeleteTodoTask",
+  async (
+    { token, taskId, todoId },
+    { dispatch, getState, rejectWithValue },
+  ) => {
+    const res = await makeAPIRequest(
+      API.APIEnum.TASK.DELETE(taskId),
+      null,
+      "deleteTask",
+      token.token,
+      "DELETE",
+      {
+        onSuccess: (_) => {},
+        onError: (_) => {
+          console.log("got into the task error");
+          dispatch(taskToDelete({ taskId, todoId }));
+        },
+      },
+    );
+    return res;
+  },
+);
+
+export const APIUpdateTodoTaskIndex = createAsyncThunk(
+  "todo/APIUpdateTodoTaskIndex",
+  async (token, { dispatch, getState, rejectWithValue }) => {
+    const currentTodoId = getState().todos.currentTodo;
+    const currentTodo = getState().todos.todo.find(
+      (todo) => todo.todoId === currentTodoId,
+    );
+    const listItems = [];
+    currentTodo.task.forEach((task, i) =>
+      listItems.push({ id: task.taskId, ordering: i + 1 }),
+    );
+
+    const payload = { ordering_list: listItems };
+
+    const res = await makeAPIRequest(
+      API.APIEnum.TASK.BATCH_UPDATE_ORDERING,
+      payload,
+      "updateTask",
+      token.token,
+      "PATCH",
+      {
+        onSuccess: () => {},
+        onError: (_) => {
+          dispatch(taskOrdering(payload));
         },
       },
     );

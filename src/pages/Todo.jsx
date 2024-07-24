@@ -8,7 +8,10 @@ import { HiXMark } from "react-icons/hi2";
 import { useDispatch, useSelector } from "react-redux";
 import {
   APICreateTodo,
+  APIDeleteTodo,
+  APIDeleteTodoTask,
   APIUpdateTodoComplete,
+  APIUpdateTodoIndex,
   APIUpdateTodoTask,
   completeOrUncompleteTodo,
   createTaskForTodo,
@@ -95,7 +98,7 @@ function Todo() {
   );
 }
 
-function TaskAddInput({ id, task = null }) {
+function TaskAddInput({ id, task = null, todoId = null }) {
   const { token } = useContext(TodoContext);
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -116,11 +119,14 @@ function TaskAddInput({ id, task = null }) {
     if (e.type === "change") {
       const payload = { ...task, completed: e.target.checked };
       dispatch(updateTaskForTodo(payload));
+      dispatch(APIUpdateTodoTask({ token, task: payload }));
     }
   }
 
   function handleTaskDelete() {
-    dispatch(deleteTaskForTodo({ taskId: task.taskId }));
+    const payload = { taskId: task.taskId, todoId };
+    dispatch(deleteTaskForTodo(payload));
+    dispatch(APIDeleteTodoTask({ ...payload, token }));
   }
 
   return (
@@ -168,7 +174,8 @@ function TaskAddInput({ id, task = null }) {
 }
 
 function SortableTaskInput({ tasks, activeDict }) {
-  const { sensors, handleDragEnd, handleDragStart } = useTaskRender();
+  const { sensors, handleDragEnd, handleDragStart, currentTodo } =
+    useTaskRender();
   return (
     <DndContext
       sensors={sensors}
@@ -178,12 +185,21 @@ function SortableTaskInput({ tasks, activeDict }) {
     >
       <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
         {tasks?.map((t) => (
-          <TaskAddInput id={t?.taskId} key={t?.taskId} task={t} />
+          <TaskAddInput
+            id={t?.taskId}
+            key={t?.taskId}
+            task={t}
+            todoId={currentTodo.todoId}
+          />
         ))}
       </SortableContext>
       <DragOverlay>
         {activeDict ? (
-          <TaskAddInput id={activeDict.taskId} task={activeDict} />
+          <TaskAddInput
+            id={activeDict.taskId}
+            task={activeDict}
+            todoId={currentTodo.todoId}
+          />
         ) : null}
       </DragOverlay>
     </DndContext>
@@ -302,6 +318,7 @@ function TodoListItem({
                   e.stopPropagation();
                   if (todo?.todoId === currentTodo) setInitFormRendered(false);
                   dispatch(deleteTodo({ todoId: todo?.todoId }));
+                  dispatch(APIDeleteTodo({ token, todoId: todo?.todoId }));
                 }}
               >
                 Delete
@@ -404,6 +421,7 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
     const { active, over } = event;
     if (active.id !== over.id) {
       dispatch(replaceTodoIndex({ from: active.id, to: over.id }));
+      dispatch(APIUpdateTodoIndex(token));
     }
     setActiveTodoDict({});
   }

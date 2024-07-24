@@ -3,6 +3,7 @@ import { useContext, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   APICreateTodoTask,
+  APIUpdateTodoTaskIndex,
   APIUpdateTodoTitle,
   createTaskForTodo,
   replaceTaskIndexForTodo,
@@ -70,6 +71,7 @@ export function useTaskRender() {
 
     if (active.id !== over.id) {
       dispatch(replaceTaskIndexForTodo({ from: active.id, to: over.id }));
+      dispatch(APIUpdateTodoTaskIndex(token));
     }
     const isIncompletedTaskType = incompletedTasksIdList.includes(active.id)
       ? true
