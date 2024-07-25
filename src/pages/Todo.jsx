@@ -50,16 +50,19 @@ import { useLocalStorageState } from "../hooks/useLocalStorageState";
 export const TodoContext = createContext();
 
 function TodoTokenProvider({ children }) {
-  const [token, setToken] = useLocalStorageState(null, "token");
+  const { token, setToken, getLocalStates } = useLocalStorageState(
+    null,
+    "token",
+  );
 
   return (
-    <TodoContext.Provider value={{ token }}>{children}</TodoContext.Provider>
+    <TodoContext.Provider value={{ token, getLocalStates }}>
+      {children}
+    </TodoContext.Provider>
   );
 }
 
 function Todo() {
-  const [initFormRendered, setInitFormRendered] = useState(false);
-
   useEffect(() => {
     document.documentElement.classList.add("html");
     document.body.classList.add("body");
@@ -71,30 +74,9 @@ function Todo() {
   }, []);
 
   return (
-    <div className={[styles["container"], styles["todo-active"]].join(" ")}>
-      <header>
-        <nav className={styles["navbar"]}>
-          <p
-            className={[styles["navbar-back--btn"], styles["hidden"]].join(" ")}
-          >
-            Back
-          </p>
-          <p className={styles["navbar-header-title"]}>TD App</p>
-        </nav>
-      </header>
-
-      <div className={styles["row"]}>
-        <TodoTokenProvider>
-          <div className={styles["td-row"]}>
-            <TodoListRender
-              initFormRendered={initFormRendered}
-              setInitFormRendered={setInitFormRendered}
-            />
-            <TaskContentRender initFormRendered={initFormRendered} />
-          </div>
-        </TodoTokenProvider>
-      </div>
-    </div>
+    <TodoTokenProvider>
+      <TodoRenderer />
+    </TodoTokenProvider>
   );
 }
 
@@ -465,6 +447,81 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
             </DragOverlay>
           </DndContext>
         )}
+      </div>
+    </div>
+  );
+}
+
+function TodoRenderer() {
+  const [initFormRendered, setInitFormRendered] = useState(false);
+  const [syncUIActive, setSyncUIActive] = useState(true);
+
+  useEffect(() => {
+    const { todos, diff } = getLocalStates();
+    if (diff && diff.diffActive) {
+      //TODO: implement sync functionality
+    }
+  }, []);
+
+  return (
+    <div className={[styles["container"], styles["todo-active"]].join(" ")}>
+      <header>
+        <nav className={styles["navbar"]}>
+          <p
+            className={[styles["navbar-back--btn"], styles["hidden"]].join(" ")}
+          >
+            Back
+          </p>
+          <p className={styles["navbar-header-title"]}>TD App</p>
+        </nav>
+      </header>
+
+      <div className={styles["row"]}>
+        {syncUIActive && (
+          <SyncUINotifier
+            syncUIActive={syncUIActive}
+            setSyncUIActive={setSyncUIActive}
+          />
+        )}
+        <div className={styles["td-row"]}>
+          <TodoListRender
+            initFormRendered={initFormRendered}
+            setInitFormRendered={setInitFormRendered}
+          />
+          <TaskContentRender initFormRendered={initFormRendered} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SyncUINotifier({ syncUIActive, setSyncUIActive }) {
+  return (
+    <div className={styles["sync-alert"]}>
+      <div className={styles["sync-msg"]}>
+        Network Connectivity Issue Detected, its advisable to save data now to
+        prevent data Loss If connectivity Still available
+      </div>
+      <div className={styles["sync-btns"]}>
+        <button
+          className={[
+            styles["btn-sync"],
+            styles["btn-sync-now"],
+            styles["bd-radius"],
+          ].join(" ")}
+        >
+          Sync Now
+        </button>
+        <button
+          className={[
+            styles["btn-sync"],
+            styles["btn-sync-later"],
+            styles["bd-radius"],
+          ].join(" ")}
+          onClick={() => setSyncUIActive(false)}
+        >
+          Sync Later
+        </button>
       </div>
     </div>
   );

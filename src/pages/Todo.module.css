@@ -364,6 +364,60 @@
     padding: 0;
 }
 
+.sync-alert {
+    display: flex;
+    background: crimson;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    /* height: 3.4rem; */
+    height: auto;
+    min-height: 4rem;
+    z-index: 1000;
+    position: sticky;
+}
+
+.sync-msg {
+    font-size: 1.6rem;
+    color: #ededed;
+}
+
+.bd-radius {
+    border-radius: 0.2rem;
+}
+
+.sync-btns {
+    display: flex;
+    gap: 1.4rem;
+    margin-right: 1.4rem;
+}
+
+.btn-sync {
+    height: 2.6rem;
+    width: 8.6rem;
+    border: none;
+    cursor: pointer;
+    font-size: 1.6rem;
+}
+
+.btn-sync-now {
+    color: var(--color-component--bg);
+    background-color: var(--color-nudge-bg);
+}
+
+.btn-sync-later {
+    background-color: var(--color-component--bg);
+    color: #ededed;
+}
+
+.loader-sync-msg {
+    font-size: 1.6rem;
+    color: #ededed;
+    position: absolute;
+    width: 20rem;
+    transform: translate(-6rem, 3.8rem);
+}
+
 /* --------------------------- */
 /* BELOW 1000px (smaller desktops) */
 /* ----------------------------- */
@@ -405,11 +459,11 @@
     height: 4.4rem;
   } */
 
-    .sync-btns {
+    /* .sync-btns {
         display: flex;
         gap: 1.4rem;
         margin-right: 1.4rem;
-    }
+    } */
 
     .sync-msg {
         flex: 1 0 0;

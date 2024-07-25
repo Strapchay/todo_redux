@@ -18,6 +18,14 @@ import { ALERT_STATUS_ERRORS, BASE_API_URL, successCodes } from "./constants";
 //   })()
 // }
 //
+export function persistTodo(state) {
+  localStorage.setItem("todos", JSON.stringify(state));
+}
+
+export function persistDiff(state) {
+  localStorage.setItem("diff", JSON.stringify(state));
+}
+
 async function getDeleteRes(data, requestType) {
   if (requestType === "deleteTask") return null;
   if (requestType === "deleteTodo") {

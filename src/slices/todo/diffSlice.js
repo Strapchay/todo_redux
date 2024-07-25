@@ -12,6 +12,7 @@ const initialState = {
   todoOrdering: [],
   taskOrdering: [],
   diffActive: false,
+  syncActive: false,
 };
 
 const diffSlice = createSlice({
@@ -22,6 +23,7 @@ const diffSlice = createSlice({
       const toCreates = [...state.todoToCreate, action.payload.todoId];
       const uniqueToCreates = new Set(toCreates);
       state.todoToCreate = [...uniqueToCreates];
+      state.diffActive = true;
     },
     todoToUpdate(state, action) {
       const todoExists = state.todoToUpdate.findIndex(
@@ -34,12 +36,15 @@ const diffSlice = createSlice({
           ...action.payload,
         };
       else state.todoToUpdate.push(action.payload);
+      state.diffActive = true;
     },
     todoToDelete(state, action) {
       state.todoToDelete.push(action.payload.todoId);
+      state.diffActive = true;
     },
     todoOrdering(state, action) {
       state.todoOrdering = action.payload.ordering_list;
+      state.diffActive = true;
     },
     taskToCreate(state, action) {
       const taskExists = state.taskToCreate.findIndex(
@@ -47,6 +52,7 @@ const diffSlice = createSlice({
       );
 
       if (taskExists < 0) state.taskToCreate.push({ ...action.payload });
+      state.diffActive = true;
     },
     taskToUpdate(state, action) {
       const taskExists = state.taskToUpdate.findIndex(
@@ -59,12 +65,22 @@ const diffSlice = createSlice({
           ...action.payload,
         };
       else state.taskToUpdate.push(action.payload);
+      state.diffActive = true;
     },
     taskToDelete(state, action) {
       state.taskToDelete.push(action.payload);
+      state.diffActive = true;
     },
     taskOrdering(state, action) {
       state.taskOrdering = action.payload.ordering_list;
+      state.diffActive = true;
+    },
+    deactivateDiff(state) {
+      state.diffActive = false;
+      state.syncActive = false;
+    },
+    activateSync(state) {
+      state.syncActive = true;
     },
   },
   // extraReducers(builder) {
@@ -85,4 +101,6 @@ export const {
   taskToUpdate,
   taskToDelete,
   taskOrdering,
+  deactivateDiff,
+  activateSync,
 } = diffSlice.actions;

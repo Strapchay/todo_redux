@@ -5,7 +5,7 @@ import { useLocalStorageState } from "./hooks/useLocalStorageState";
 import Todo from "./pages/Todo";
 
 function ProtectedRoute() {
-  const [token, setToken] = useLocalStorageState(null, "token");
+  const { token, setToken } = useLocalStorageState(null, "token");
   const navigate = useNavigate();
 
   //if not authenticated redirect to login page

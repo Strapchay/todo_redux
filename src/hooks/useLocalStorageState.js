@@ -13,5 +13,20 @@ export function useLocalStorageState(initialState, authToken) {
     [token, authToken],
   );
 
-  return [token, setToken];
+  // function getTodos() {
+  //   const savedTodos = localStorage.getItem("todos");
+  //   if (savedTodos) return JSON.parse(savedTodos);
+  // }
+
+  function getLocalStates() {
+    const savedTodos = localStorage.getItem("todos");
+    const savedDiff = localStorage.getItem("diff");
+    if (savedTodos)
+      return { todos: JSON.parse(savedTodos), diff: JSON.parse(savedDiff) };
+  }
+
+  // function getDiffs() {}
+
+  return { token, setToken, getLocalStates };
+  // [token, setToken];
 }

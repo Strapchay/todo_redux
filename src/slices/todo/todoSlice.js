@@ -1,6 +1,11 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { arrayMove } from "../../../utils";
-import { formatAPIResponseBody, makeAPIRequest } from "../../helpers";
+import {
+  formatAPIResponseBody,
+  makeAPIRequest,
+  persistDiff,
+  persistTodo,
+} from "../../helpers";
 import { API } from "../../api";
 import {
   taskOrdering,
@@ -224,6 +229,8 @@ export const APICreateTodo = createAsyncThunk(
             payload: todoBody,
           };
           dispatch(payload);
+          const todos = getState().todos;
+          persistTodo(todos);
         },
         onError: (_) => {
           const currentTime = Date.now();
@@ -234,6 +241,10 @@ export const APICreateTodo = createAsyncThunk(
             }),
           );
           dispatch(todoToCreate({ todoId: currentTime }));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -251,10 +262,17 @@ export const APIUpdateTodoTitle = createAsyncThunk(
       token.token,
       "PATCH",
       {
-        onSuccess: () => {},
+        onSuccess: () => {
+          const todos = getState().todos;
+          persistTodo(todos);
+        },
         onError: (_) => {
           const payload = { todoId, title };
           dispatch(todoToUpdate(payload));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -275,10 +293,17 @@ export const APIUpdateTodoComplete = createAsyncThunk(
       token.token,
       "PATCH",
       {
-        onSuccess: () => {},
+        onSuccess: () => {
+          const todos = getState().todos;
+          persistTodo(todos);
+        },
         onError: (_) => {
           const payload = { todoId, completed };
           dispatch(todoToUpdate(payload));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -296,12 +321,19 @@ export const APIDeleteTodo = createAsyncThunk(
       token.token,
       "DELETE",
       {
-        onSuccess: (_) => {},
+        onSuccess: (_) => {
+          const todos = getState().todos;
+          persistTodo(todos);
+        },
         onError: (err) => {
           const errContainsStatus =
             err?.includes("status") && err.split(":")[1];
           if (errContainsStatus && Number(errContainsStatus) === 405) return;
           else dispatch(todoToDelete({ todoId }));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -327,9 +359,16 @@ export const APIUpdateTodoIndex = createAsyncThunk(
       token.token,
       "PATCH",
       {
-        onSuccess: () => {},
+        onSuccess: () => {
+          const todos = getState().todos;
+          persistTodo(todos);
+        },
         onError: (_) => {
           dispatch(todoOrdering(payload));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -354,6 +393,10 @@ export const APICreateTodoTask = createAsyncThunk(
             payload: taskBody,
           };
           dispatch(payload);
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
         onError: (_) => {
           const currentTime = Date.now();
@@ -364,6 +407,10 @@ export const APICreateTodoTask = createAsyncThunk(
             }),
           );
           dispatch(taskToCreate({ todoId, taskId: Number(currentTime) }));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -381,7 +428,10 @@ export const APIUpdateTodoTask = createAsyncThunk(
       token.token,
       "PATCH",
       {
-        onSuccess: () => {},
+        onSuccess: () => {
+          const todos = getState().todos;
+          persistTodo(todos);
+        },
         onError: (_) => {
           const currentTodoId = getState().todos.currentTodo;
           const currentTodo = getState().todos.todo.find(
@@ -394,6 +444,10 @@ export const APIUpdateTodoTask = createAsyncThunk(
             todoLastAdded: currentTodo.lastAdded,
           };
           dispatch(taskToUpdate(payload));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -414,10 +468,16 @@ export const APIDeleteTodoTask = createAsyncThunk(
       token.token,
       "DELETE",
       {
-        onSuccess: (_) => {},
+        onSuccess: (_) => {
+          const todos = getState().todos;
+          persistTodo(todos);
+        },
         onError: (_) => {
-          console.log("got into the task error");
           dispatch(taskToDelete({ taskId, todoId }));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );
@@ -446,9 +506,16 @@ export const APIUpdateTodoTaskIndex = createAsyncThunk(
       token.token,
       "PATCH",
       {
-        onSuccess: () => {},
+        onSuccess: () => {
+          const todos = getState().todos;
+          persistTodo(todos);
+        },
         onError: (_) => {
           dispatch(taskOrdering(payload));
+          const todos = getState().todos;
+          const diff = getState().diff;
+          persistTodo(todos);
+          persistDiff(diff);
         },
       },
     );

@@ -11,7 +11,7 @@ import { SwitcherContext } from "../Landing";
 function RegisterForm() {
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
   const { register, handleSubmit, reset, getValues, formState } = useForm();
-  const [token, setToken] = useLocalStorageState(null, "token");
+  const { token, setToken } = useLocalStorageState(null, "token");
   const { errors } = formState;
   const { handleRequest } = useAuth(
     API.APIEnum.USER.CREATE,
