@@ -11,7 +11,7 @@ function ProtectedRoute() {
   //if not authenticated redirect to login page
   useEffect(
     function () {
-      if (!token?.token) {
+      if (!token || !token?.token) {
         //error ||
         navigate("/login");
       }
@@ -23,7 +23,7 @@ function ProtectedRoute() {
   //TODO: find value to render app loading spinner
   // if (isLoading) return <PageLoader />;
   //|| isAuthenticated == undefined
-  if (token.token) return <Todo />;
+  if (token?.token) return <Todo />;
 }
 
 export default ProtectedRoute;

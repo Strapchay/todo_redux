@@ -1,86 +1,88 @@
 import { useContext, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { deactivateDiff } from "../slices/todo/diffSlice";
-import { persistDiff } from "../helpers";
+import { deactivateDiff, updateDiffState } from "../slices/todo/diffSlice";
+import {
+  batchRequestWrapper,
+  formatAPIRequestBody,
+  formatBatchCreatedReturnData,
+  persistDiff,
+} from "../helpers";
 import { TodoContext } from "../pages/Todo";
 import toast from "react-hot-toast";
+import { API } from "../api";
+import { useEffect } from "react";
+import { useCallback } from "react";
 
-export function useSyncLocalStorageToAPI() {
-  const dispatch = useDispatch()
-  const [syncState, setSyncState] = useState(0)
-  const diff = useSelector(state => state.diff)
-  const toastRef = useRef()
-  const modelState = useSelector(state => state.todos)
+//TODO: instead of using a diff, load the diff to the diffState and add its active and then sync that data value to be a ble to use it with redux
+export function useSyncLocalStorageToAPI(localDataAdded) {
+  const dispatch = useDispatch();
+  const [syncState, setSyncState] = useState(0);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const diff = useSelector((state) => state.diff);
+  const toastRef = useRef();
+  const modelState = useSelector((state) => state.todos);
+  const token = { token: null };
 
-  const { getLocalStates } = useContext(TodoContext)
-  const { todos = null, diffLocal = null } = getLocalStates();
-  const pendingStateSync = useRef(diffLocal ? {
-    pendingTodos: diffLocal.todoToCreate,
-    pendingTasks: diffLocal.taskToCreate,
-    pendingTodosToDelete: diffLocal.todoToDelete.map(
-      (todo) => +todo,
-    ),
-    pendingTasksToDelete: diffLocal.taskToDelete,
-    pendingTodoToUpdate: diffLocal.todoToUpdate,
-    pendingTaskToUpdate: diffLocal.taskToUpdate,
-    //ordering
-    pendingTodoOrdering: diffLocal.todoOrdering,
-    pendingTaskOrdering: diffLocal.taskOrdering
-  } : {})
+  const pendingStateSync = useRef(
+    diff
+      ? {
+          pendingTodos: diff?.todoToCreate,
+          pendingTasks: diff?.taskToCreate,
+          pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
+          pendingTasksToDelete: diff?.taskToDelete,
+          pendingTodoToUpdate: diff?.todoToUpdate,
+          pendingTaskToUpdate: diff?.taskToUpdate,
+          //ordering
+          pendingTodoOrdering: diff?.todoOrdering,
+          pendingTaskOrdering: diff?.taskOrdering,
+        }
+      : {},
+  );
+
   const toCreatePendingState = useRef({
     createPendingTodos: [],
     createPendingTodosToUpdate: [],
     createPendingTasks: [],
     createPendingTasksToUpdate: [],
     createPendingTaskLinkedToAPITodo: [],
-    createPendingTaskLinkedToAPITodoToUpdate: []
-  })
+    createPendingTaskLinkedToAPITodoToUpdate: [],
+  });
   const toCreatePayloadState = useRef({
     createTodoPayload: { payload: [], ids: [] },
     createTaskPayload: { payload: [], ids: [] },
     createTodoToUpdatePayload: { payload: [], ids: [] },
-    createTaskToUpdatePayload: { payload: [], ids: [] }
-  })
-
-
-  function startModelInit(init) {
-    this._handleStartSync();
+    createTaskToUpdatePayload: { payload: [], ids: [] },
+  });
+  function startSync() {
+    setSyncLoading(true);
+    _handleStartSync();
   }
+
+  useEffect(() => {
+    if (localDataAdded) startSync();
+  }, [localDataAdded, startSync]);
 
   function completeSyncAndLoadData() {
     if (syncState <= 0) {
-      setSyncState(0)
-      dispatch(deactivateDiff())
-      persistDiff(diff)
+      setSyncState(0);
+      setSyncLoading(false);
+      dispatch(deactivateDiff());
+      persistDiff(diff);
     }
   }
 
-  _clearInitData() {
-    this._init =
-      this._loader =
-      modelState =
-      diffLocal =
-      this._diffObj =
-      null;
-  }
-
-  function initializeSyncProperties() {
-    pendingStateSync.current =
-
-
-
-  }
-
-  function handleStartSync() {
+  function _handleStartSync() {
+    console.log("handle start sync started");
+    console.log("state vals", pendingStateSync, toCreatePendingState);
     filterProperties();
 
-    createPropertiesPayload();
+    // createPropertiesPayload();
 
-    this._makePropertiesRequest();
+    // makePropertiesRequest();
 
-    //try to complete sync if no data is to be synced after request
-    completeSyncAndLoadData();
-    console.log(syncState);
+    // //try to complete sync if no data is to be synced after request
+    // completeSyncAndLoadData();
+    // console.log(syncState);
   }
 
   function filterProperties() {
@@ -92,6 +94,8 @@ export function useSyncLocalStorageToAPI() {
       toCreatePendingState.current.createPendingTodos,
       "todo",
     );
+    const l = true;
+    if (l) return;
 
     //todo to update passes deleted check
     filterDeletedObjectsFromObjects(
@@ -122,13 +126,22 @@ export function useSyncLocalStorageToAPI() {
   }
 
   function createPropertiesPayload() {
+    console.log("got to create rop");
     //create todo payload
+    console.log("the pending state val", pendingStateSync.current);
+    console.log("the create pending state", toCreatePendingState.current);
     createTodoPayload(
       pendingStateSync.current.pendingTodos,
       toCreatePendingState.current.createPendingTodos,
       toCreatePayloadState.current.createTodoPayload,
     );
-    console.log("the created todo payload", toCreatePayloadState.current.createTodoPayload);
+
+    const j = true;
+    if (j) return;
+    console.log(
+      "the created todo payload",
+      toCreatePayloadState.current.createTodoPayload,
+    );
 
     //create todo to update payload
     createTodoUpdatePayload(
@@ -195,8 +208,14 @@ export function useSyncLocalStorageToAPI() {
   }
 
   function makePropertiesRequest() {
+    console.log("got to making properties request");
+    const ret = true;
+    if (ret) return;
     //create batch todoToCreate
-    makeTodoCreateRequest(toCreatePayloadState.current.createTodoPayload, toCreatePayloadState.current.pendingTodos);
+    makeTodoCreateRequest(
+      toCreatePayloadState.current.createTodoPayload,
+      toCreatePayloadState.current.pendingTodos,
+    );
 
     //create batch todoToDelete
     makeTodoDeleteRequest(pendingStateSync.current.pendingTodosToDelete);
@@ -208,7 +227,10 @@ export function useSyncLocalStorageToAPI() {
     );
 
     //create batch taskToCreate
-    makeTaskToCreateRequest(toCreatePayloadState.current.createTaskPayload, pendingStateSync.current.pendingTasks);
+    makeTaskToCreateRequest(
+      toCreatePayloadState.current.createTaskPayload,
+      pendingStateSync.current.pendingTasks,
+    );
 
     //create batch taskToDelete
     makeTaskToDeleteRequest(pendingStateSync.current.pendingTasksToDelete);
@@ -221,7 +243,7 @@ export function useSyncLocalStorageToAPI() {
 
     //update ordering todo
     if (pendingStateSync.current.pendingTodoOrdering.length > 0) {
-      setSyncState(c => c + 1)
+      setSyncState((c) => c + 1);
       makeOrderingUpdateRequest(
         pendingStateSync.current.pendingTodoOrdering,
         "todo",
@@ -231,7 +253,7 @@ export function useSyncLocalStorageToAPI() {
 
     //update ordering task
     if (pendingStateSync.current.pendingTaskOrdering.length > 0) {
-      setSyncState(c => c += 1)
+      setSyncState((c) => (c += 1));
       makeOrderingUpdateRequest(
         pendingStateSync.current.pendingTaskOrdering,
         "task",
@@ -248,17 +270,14 @@ export function useSyncLocalStorageToAPI() {
       if (createTodoPayloadLength > 1) {
         makeBatchRequest(
           API.APIEnum.TODO.BATCH_CREATE,
-          batchRequestWrapper(
-            createTodoPayload.payload,
-            "batch_create",
-          ),
+          batchRequestWrapper(createTodoPayload.payload, "batch_create"),
           pendingTodos,
           "createBatchTodo",
           createTodoBatchCallBack.bind(this, createTodoPayload.ids),
           "POST",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
 
       if (createTodoPayloadLength == 1) {
@@ -271,7 +290,7 @@ export function useSyncLocalStorageToAPI() {
           "POST",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
     }
   }
@@ -292,7 +311,7 @@ export function useSyncLocalStorageToAPI() {
           "DELETE",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
 
       if (todosToDeleteLength == 1) {
@@ -305,12 +324,15 @@ export function useSyncLocalStorageToAPI() {
           "DELETE",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
     }
   }
 
-  function makeTodoUpdateRequest(createTodoToUpdatePayload, pendingTodoToUpdate) {
+  function makeTodoUpdateRequest(
+    createTodoToUpdatePayload,
+    pendingTodoToUpdate,
+  ) {
     //create batch todoUpdate
     if (createTodoToUpdatePayload.payload.length > 0) {
       const todosToUpdateLength = createTodoToUpdatePayload.payload.length;
@@ -324,14 +346,11 @@ export function useSyncLocalStorageToAPI() {
           ),
           pendingTodoToUpdate,
           "updateBatchTodo",
-          updateTodoBatchCallBack.bind(
-            this,
-            createTodoToUpdatePayload.ids,
-          ),
+          updateTodoBatchCallBack.bind(this, createTodoToUpdatePayload.ids),
           "PATCH",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
 
       if (todosToUpdateLength == 1) {
@@ -342,14 +361,11 @@ export function useSyncLocalStorageToAPI() {
           createTodoToUpdatePayload.payload[0],
           pendingTodoToUpdate,
           "updateTodo",
-          updateTodoBatchCallBack.bind(
-            this,
-            createTodoToUpdatePayload.ids,
-          ),
+          updateTodoBatchCallBack.bind(this, createTodoToUpdatePayload.ids),
           "PATCH",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
     }
   }
@@ -362,17 +378,14 @@ export function useSyncLocalStorageToAPI() {
       if (tasksToCreateLength > 1) {
         makeBatchRequest(
           API.APIEnum.TASK.BATCH_CREATE,
-          batchRequestWrapper(
-            createTasksPayload.payload,
-            "batch_create",
-          ),
+          batchRequestWrapper(createTasksPayload.payload, "batch_create"),
           pendingTasks,
           "createBatchTask",
           createTaskBatchCallBack.bind(this, createTasksPayload.ids),
           "POST",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
 
       if (tasksToCreateLength == 1) {
@@ -385,7 +398,7 @@ export function useSyncLocalStorageToAPI() {
           "POST",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
     }
   }
@@ -402,17 +415,14 @@ export function useSyncLocalStorageToAPI() {
       if (tasksToDeleteLength > 1) {
         makeBatchRequest(
           API.APIEnum.TASK.BATCH_DELETE,
-          batchRequestWrapper(
-            pendingTasksToDeletePayload,
-            "batch_delete",
-          ),
+          batchRequestWrapper(pendingTasksToDeletePayload, "batch_delete"),
           pendingTasksToDelete,
           "deleteBatchTask",
           deleteTaskBatchCallBack.bind(this, pendingTasksToDelete),
           "DELETE",
           true,
         );
-        setSyncState(c => c + 1)
+        setSyncState((c) => c + 1);
       }
 
       if (tasksToDeleteLength == 1) {
@@ -425,12 +435,15 @@ export function useSyncLocalStorageToAPI() {
           "DELETE",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
     }
   }
 
-  function makeTaskToUpdateRequest(createTaskToUpdatePayload, pendingTaskToUpdate) {
+  function makeTaskToUpdateRequest(
+    createTaskToUpdatePayload,
+    pendingTaskToUpdate,
+  ) {
     //create batch taskToUpdate
     if (pendingTaskToUpdate.length > 0) {
       const taskToUpdateLength = createTaskToUpdatePayload.payload.length;
@@ -444,14 +457,11 @@ export function useSyncLocalStorageToAPI() {
           ),
           pendingTaskToUpdate,
           "updateBatchTask",
-          updateTaskBatchCallBack.bind(
-            this,
-            createTaskToUpdatePayload.ids,
-          ),
+          updateTaskBatchCallBack.bind(this, createTaskToUpdatePayload.ids),
           "PATCH",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
 
       if (taskToUpdateLength == 1) {
@@ -460,19 +470,20 @@ export function useSyncLocalStorageToAPI() {
           createTaskToUpdatePayload.payload[0],
           pendingTaskToUpdate,
           "updateTask",
-          updateTaskBatchCallBack.bind(
-            this,
-            createTaskToUpdatePayload.ids,
-          ),
+          updateTaskBatchCallBack.bind(this, createTaskToUpdatePayload.ids),
           "PATCH",
           true,
         );
-        setSyncState(c => c += 1)
+        setSyncState((c) => (c += 1));
       }
     }
   }
 
-  function getOrderingUrlFromType(orderingLength, orderingType, objId = undefined) {
+  function getOrderingUrlFromType(
+    orderingLength,
+    orderingType,
+    objId = undefined,
+  ) {
     if (orderingLength > 1) {
       if (orderingType === "todo")
         return API.APIEnum.TODO.BATCH_UPDATE_ORDERING;
@@ -515,22 +526,7 @@ export function useSyncLocalStorageToAPI() {
     }
   }
 
-  function formatBatchCreatedReturnData(returnData, objType) {
-    let formattedReturnedData = [];
-
-    if (Array.isArray(returnData)) {
-      returnData.forEach((data, i) =>
-        formattedReturnedData.push(formatAPIResponseBody(data, objType)),
-      );
-    }
-    if (!Array.isArray(returnData))
-      formattedReturnedData.push(formatAPIResponseBody(returnData, objType));
-
-    return formattedReturnedData;
-  }
-
   function createTodoBatchCallBack(payloadIds, returnData, requestStatus) {
-
     if (requestStatus) {
       const formattedReturnedData = formatBatchCreatedReturnData(
         returnData,
@@ -554,32 +550,31 @@ export function useSyncLocalStorageToAPI() {
         }
       });
       //clear the data from the diff
-      diffLocal.todoToCreate = [];
+      diff.todoToCreate = [];
     }
-    setSyncState(c => c -= 1);
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function deleteTodoBatchCallBack(syncState, requestStatus) {
-    if (requestStatus) diffLocal.todoToDelete = [];
-    setSyncState(c => c -= 1);
+    if (requestStatus) diff.todoToDelete = [];
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function updateTodoBatchCallBack(syncState, requestStatus) {
-    if (requestStatus) diffLocal.todoToUpdate = [];
-    setSyncState(c => c -= 1);
+    if (requestStatus) diff.todoToUpdate = [];
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
-  function updateTodoOrderingBatchCallback(syncState) {
-    if (requestStatus) diffLocal.todoOrdering = [];
-    setSyncState(c => c -= 1);
+  function updateTodoOrderingBatchCallback(syncState, requestStatus) {
+    if (requestStatus) diff.todoOrdering = [];
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
-  function createTaskBatchCallBack(syncState, requestStatus) {
-
+  function createTaskBatchCallBack(payloadIds, returnData, requestStatus) {
     if (requestStatus) {
       const formattedReturnedData = formatBatchCreatedReturnData(
         returnData,
@@ -605,37 +600,45 @@ export function useSyncLocalStorageToAPI() {
         }
       });
       //clear the data from the diff
-      diffLocal.taskToCreate = [];
+      dispatch(updateDiffState({ ...diff, taskToCreate: [] }));
     }
-    setSyncState(c => c -= 1);
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function deleteTaskBatchCallBack(syncState, requestStatus) {
-
-    if (requestStatus) diffLocal.taskToDelete = [];
-    setSyncState(c => c -= 1);
+    if (requestStatus) diff.taskToDelete = [];
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function updateTaskBatchCallBack(psyncState, requestStatus) {
-
-    if (requestStatus) diffLocal.taskToUpdate = [];
-    setSyncState(c => c -= 1);
+    if (requestStatus) dispatch(updateDiffState({ ...diff, taskToUpdate: [] }));
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
-  function updateTaskOrderingBatchCallBack(syncState) {
-    if (requestStatus) diffLocal.taskOrdering = [];
-    setSyncState(c => c -= 1);
+  function updateTaskOrderingBatchCallBack(syncState, requestStatus) {
+    if (requestStatus) diff.taskOrdering = [];
+    setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
-  function filterDeletedObjectsFromObjects(syncState,
+  function filterDeletedObjectsFromObjects(
+    object,
+    deletedObjects,
     deletedObjectParent,
     returnList,
     objectType,
   ) {
+    console.log(
+      "the obj del obj del obj par retlist objtype",
+      object,
+      deletedObjects,
+      deletedObjectParent,
+      returnList,
+      objectType,
+    );
     if (object.length > 0) {
       const deletedObjectsExists = deletedObjects.length > 0;
       if (deletedObjectsExists) {
@@ -668,6 +671,7 @@ export function useSyncLocalStorageToAPI() {
     todoToCreatePayloadArray,
   ) {
     //create todo payload
+    console.log("todo create diff", todoToCreateDiffArray);
     if (
       todoToCreateDiffArray.length > 0 &&
       todoToCreateFilteredArray.length > 0
@@ -675,13 +679,16 @@ export function useSyncLocalStorageToAPI() {
       todoToCreateFilteredArray.forEach((todo) => {
         //get todo from modelState
         const modelTodos = modelState.todo;
+        console.log("the m todo", modelTodos);
         const todoModelIndex = modelState.todo.findIndex(
           (modelTodo) => modelTodo.todoId === todo.todoId,
         );
 
-        const todoBody = cloneDeep(modelTodos[todoModelIndex]);
+        const todoBody = JSON.parse(JSON.stringify(modelTodos[todoModelIndex]));
+        console.log("the todoBody", todoBody);
 
         todoToCreatePayloadArray.ids.push(todoBody.todoId);
+        console.log("the crp arr", todoToCreatePayloadArray);
         //remove ids from todo and tasks
         delete todoBody.todoId;
         console.log("the todo body", todoBody);
@@ -692,7 +699,8 @@ export function useSyncLocalStorageToAPI() {
         todoToCreatePayloadArray["payload"].push(formattedTodoBody);
       });
     else {
-      diffLocal.todoToCreate = [];
+      console.log("got here");
+      // dispatch(updateDiffState({ todoToCreate: [] }));
     }
   }
 
@@ -702,17 +710,15 @@ export function useSyncLocalStorageToAPI() {
     todoToCreateFilteredArray,
     todoToUpdatePayloadArray,
   ) {
-    debugger;
     //create todo to update payload
     if (
       todoToUpdateDiffArray.length > 0 &&
       todoToUpdateFilteredArray.length > 0
     )
       todoToUpdateFilteredArray.forEach((todo) => {
-        const todoToUpdateExistsInTodoToCreate =
-          todoToCreateFilteredArray.some(
-            (pendingTodo) => pendingTodo.todoId === todo.todoId,
-          );
+        const todoToUpdateExistsInTodoToCreate = todoToCreateFilteredArray.some(
+          (pendingTodo) => pendingTodo.todoId === todo.todoId,
+        );
 
         if (!todoToUpdateExistsInTodoToCreate)
           todoToUpdatePayloadArray.payload.push(
@@ -721,7 +727,7 @@ export function useSyncLocalStorageToAPI() {
         todoToUpdatePayloadArray.ids.push(todo.todoId);
       });
     else {
-      diffLocal.todoToUpdate = [];
+      dispatch(updateDiffState({ todoToUpdate: [] }));
     }
   }
 
@@ -738,9 +744,7 @@ export function useSyncLocalStorageToAPI() {
     )
       tasksToCreateFilteredArray.forEach((task) => {
         const pendingTaskTodoExistsInPendingTodos =
-          todoToCreateFilteredArray.some(
-            (todo) => todo.todoId === task.todoId,
-          );
+          todoToCreateFilteredArray.some((todo) => todo.todoId === task.todoId);
 
         if (!pendingTaskTodoExistsInPendingTodos)
           pendingTaskLinkedToAPITodoArray.push(task);
@@ -775,7 +779,7 @@ export function useSyncLocalStorageToAPI() {
         );
       });
     else {
-      diffLocal.taskToCreate = [];
+      dispatch(updateDiffState({ ...diff, taskToCreate: [] }));
     }
   }
 
@@ -792,16 +796,12 @@ export function useSyncLocalStorageToAPI() {
     )
       pendingTaskLinkedToAPITodoToUpdate.forEach((task) => {
         // const taskToUpdateExists
-        const taskToUpdateExistsInTaskAPITodo =
-          pendingTaskLinkedToAPITodo.some(
-            (APITodoTask) => APITodoTask.taskId === task.taskId,
-          );
+        const taskToUpdateExistsInTaskAPITodo = pendingTaskLinkedToAPITodo.some(
+          (APITodoTask) => APITodoTask.taskId === task.taskId,
+        );
 
         if (!taskToUpdateExistsInTaskAPITodo) {
-          const taskBody = filterToGetTaskBody(
-            task.taskId,
-            task.todoId,
-          );
+          const taskBody = filterToGetTaskBody(task.taskId, task.todoId);
           // taskBody.todoId = task.todoId
           taskToUpdatePayloadArray.ids.push({
             taskId: task.taskId,
@@ -818,7 +818,7 @@ export function useSyncLocalStorageToAPI() {
         }
       });
     else {
-      diffLocal.taskToUpdate = [];
+      dispatch(updateDiffState({ ...diff, taskToUpdate: [] }));
     }
   }
 
@@ -833,7 +833,9 @@ export function useSyncLocalStorageToAPI() {
     );
     if (!clone) return modelTodos[todoModelIndex].tasks[taskIndex];
 
-    const taskBody = cloneDeep(modelTodos[todoModelIndex].tasks[taskIndex]);
+    const taskBody = JSON.parse(
+      JSON.stringify(modelTodos[todoModelIndex].tasks[taskIndex]),
+    );
     return taskBody;
   }
 
@@ -861,33 +863,6 @@ export function useSyncLocalStorageToAPI() {
     API.queryAPI(queryObj);
   }
 
-  function wrapper(wrapperName, requestBody) {
-    const wrapper = {};
-    wrapper[wrapperName] = requestBody;
-
-    return wrapper;
-  }
-
-  function batchRequestWrapper(requestBody, requestType) {
-    if (requestType === "batch_update") {
-      return wrapper("update_list", requestBody);
-    }
-
-    if (requestType === "batch_update_ordering") {
-      return wrapper("ordering_list", requestBody);
-    }
-
-    if (requestType === "batch_create") {
-      return wrapper("create_list", requestBody);
-    }
-
-    if (requestType === "batch_delete") {
-      return wrapper("delete_list", requestBody);
-    }
-  }
-
-  updateAndGetToken() { }
-
   function returnObjType(objType, obj) {
     if (objType === "todo") return obj.todoId;
     if (objType === "task") return obj.taskId;
@@ -899,11 +874,13 @@ export function useSyncLocalStorageToAPI() {
   }
 
   function createLoader() {
-    toastRef.current = toast
+    toastRef.current = toast;
   }
 
   function removeLoader() {
     if (toastRef.current) toastRef.current.remove();
-    toastRef.current = null
+    toastRef.current = null;
   }
+
+  return { startSync, syncLoading };
 }

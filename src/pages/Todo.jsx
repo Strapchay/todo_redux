@@ -23,6 +23,7 @@ import {
   selectAllTodos,
   selectCurrentTodo,
   setCurrentTodo,
+  setInitialTodoFromLocalStorage,
   updateTaskForTodo,
   updateTodo,
 } from "../slices/todo/todoSlice";
@@ -46,6 +47,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { useTaskRender } from "../hooks/useTaskRender";
 import { formatEditDate } from "../../utils";
 import { useLocalStorageState } from "../hooks/useLocalStorageState";
+import { setInitialDiffFromLocalStorage } from "../slices/todo/diffSlice";
+import { useSyncLocalStorageToAPI } from "../hooks/useSyncLocalStorageToAPI";
+import Modal from "../Modal";
 
 export const TodoContext = createContext();
 
@@ -455,14 +459,30 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
 function TodoRenderer() {
   const [initFormRendered, setInitFormRendered] = useState(false);
   const [syncUIActive, setSyncUIActive] = useState(true);
+  const [addedInitLocalData, setAddedInitLocalData] = useState(false);
+  const { startSync, syncLoading } =
+    useSyncLocalStorageToAPI(addedInitLocalData);
+  const { getLocalStates } = useContext(TodoContext);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    const { todos, diff } = getLocalStates();
-    if (diff && diff.diffActive) {
-      //TODO: implement sync functionality
+    if (!addedInitLocalData) {
+      const { todos = null, diff = null } = getLocalStates?.() ?? {};
+      console.log("the todos local", todos);
+      console.log("the diff local", diff);
+
+      if (todos) dispatch(setInitialTodoFromLocalStorage(todos));
+      if (diff) dispatch(setInitialDiffFromLocalStorage(diff));
+      console.log("added state from local storage");
+      //start the syncer
+      startSync?.();
+      setAddedInitLocalData(true);
     }
   }, []);
 
+  // if (diff && diff.diffActive) {
+  //   //TODO: implement sync functionality
+  // }
   return (
     <div className={[styles["container"], styles["todo-active"]].join(" ")}>
       <header>
@@ -491,6 +511,14 @@ function TodoRenderer() {
           <TaskContentRender initFormRendered={initFormRendered} />
         </div>
       </div>
+      {syncLoading && (
+        <Modal>
+          <Modal.Open opens="sync-loader" click={false}></Modal.Open>
+          <Modal.Window name="sync-loader">
+            <div></div>
+          </Modal.Window>
+        </Modal>
+      )}
     </div>
   );
 }

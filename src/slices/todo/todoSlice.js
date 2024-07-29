@@ -29,6 +29,15 @@ const todoSlice = createSlice({
   name: "todo",
   initialState,
   reducers: {
+    setInitialTodoFromLocalStorage(state, action) {
+      // let modState = { ...state };
+      // const modState = action.payload;
+      // console.log("the modState value", modState);
+      // state = { ...modState };
+      console.log("the action payload", action.payload);
+      return { ...action.payload };
+      // return state;
+    },
     createTodo: {
       prepare(payload) {
         return {
@@ -56,14 +65,23 @@ const todoSlice = createSlice({
         };
       },
       reducer(state, action) {
-        const todoIndex = state.todo.findIndex(
-          (todo) => todo.todoId === state.currentTodo,
-        );
+        const idVal = state.currentTodo ?? action.payload.todoId;
+        const todoIndex = state.todo.findIndex((todo) => todo.todoId === idVal);
         const modState = [...state.todo];
         modState.splice(todoIndex, 1, action.payload);
         state.todo = modState;
       },
     },
+    // updateTodoObj: {
+    //   reducer(state, action) {
+    //     const todoIndex = state.todo.findIndex(
+    //       (todo) => todo.todoId === action.payload.todoId,
+    //     );
+    //     const modState = [...state.todo];
+    //     modState.splice(todoIndex, 1, action.payload);
+    //     state.todo = modState;
+    //   },
+    // },
     deleteTodo(state, action) {
       const todoIndex = state.todo.findIndex(
         (todo) => todo.todoId === action.payload.todoId,
@@ -206,6 +224,7 @@ export const {
   replaceTaskIndexForTodo,
   setCurrentTodo,
   replaceTodoIndex,
+  setInitialTodoFromLocalStorage,
 } = todoSlice.actions;
 export default todoSlice.reducer;
 
@@ -216,7 +235,7 @@ export const APICreateTodo = createAsyncThunk(
   "todo/APICreateTodo",
   async (token, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TODO.CREATE,
+      API.APIEnum.TODO.CREATE + "sdfsdfd/",
       { title: "" },
       "createTodo",
       token.token,

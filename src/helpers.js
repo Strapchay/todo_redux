@@ -259,3 +259,42 @@ export const formatAPIPayloadForUpdateReorder = function (payload, type) {
 
   return requestObj;
 };
+
+export function wrapper(wrapperName, requestBody) {
+  const wrapper = {};
+  wrapper[wrapperName] = requestBody;
+
+  return wrapper;
+}
+
+export function batchRequestWrapper(requestBody, requestType) {
+  if (requestType === "batch_update") {
+    return wrapper("update_list", requestBody);
+  }
+
+  if (requestType === "batch_update_ordering") {
+    return wrapper("ordering_list", requestBody);
+  }
+
+  if (requestType === "batch_create") {
+    return wrapper("create_list", requestBody);
+  }
+
+  if (requestType === "batch_delete") {
+    return wrapper("delete_list", requestBody);
+  }
+}
+
+export function formatBatchCreatedReturnData(returnData, objType) {
+  let formattedReturnedData = [];
+
+  if (Array.isArray(returnData)) {
+    returnData.forEach((data, i) =>
+      formattedReturnedData.push(formatAPIResponseBody(data, objType)),
+    );
+  }
+  if (!Array.isArray(returnData))
+    formattedReturnedData.push(formatAPIResponseBody(returnData, objType));
+
+  return formattedReturnedData;
+}

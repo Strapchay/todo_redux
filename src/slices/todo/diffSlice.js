@@ -1,5 +1,11 @@
-import { createSlice } from "@reduxjs/toolkit";
-import { APICreateTodo } from "./todoSlice";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { APICreateTodo, updateTodo } from "./todoSlice";
+import {
+  batchRequestWrapper,
+  formatBatchCreatedReturnData,
+  makeAPIRequest,
+} from "../../helpers";
+import { API } from "../../api";
 
 const initialState = {
   //diffing related properties
@@ -19,6 +25,12 @@ const diffSlice = createSlice({
   name: "diff",
   initialState,
   reducers: {
+    setInitialDiffFromLocalStorage(state, action) {
+      return { ...action.payload };
+    },
+    updateDiffState(state, action) {
+      return { ...state, ...action.payload };
+    },
     todoToCreate(state, action) {
       const toCreates = [...state.todoToCreate, action.payload.todoId];
       const uniqueToCreates = new Set(toCreates);
@@ -75,6 +87,9 @@ const diffSlice = createSlice({
       state.taskOrdering = action.payload.ordering_list;
       state.diffActive = true;
     },
+    clearTodoToCreate(state) {
+      state.todoToCreate = [];
+    },
     deactivateDiff(state) {
       state.diffActive = false;
       state.syncActive = false;
@@ -103,4 +118,50 @@ export const {
   taskOrdering,
   deactivateDiff,
   activateSync,
+  clearTodoToCreate,
+  updateDiffState,
+  setInitialDiffFromLocalStorage,
 } = diffSlice.actions;
+
+export const APICreateDiffTodo = createAsyncThunk(
+  "todo/APICreateDiffTodo",
+  async (
+    { token, createTodoPayload, pendingTodos, pendingRef, setSyncCount },
+    { dispatch, getState, rejectWithValue },
+  ) => {
+    const res = await makeAPIRequest(
+      API.APIEnum.TODO.BATCH_CREATE,
+      batchRequestWrapper(createTodoPayload.payload, "batch_create"),
+      "createBatchTodo",
+      token.token,
+      "POST",
+      {
+        onSuccess: (data) => {
+          const todos = getState().todos.todo;
+          //TODO: imp differ
+          const formattedReturnedData = formatBatchCreatedReturnData(
+            data,
+            "todo",
+          );
+          createTodoPayload.payload.ids.forEach((payloadId, i) => {
+            const todo = formattedReturnedData[i];
+            dispatch(updateTodo(todo));
+
+            const todoOrdering = pendingRef.current.pendingTodoOrdering;
+            if (todoOrdering.length > 0) {
+              const todoOrderingIdUpdateIfCreatedByFallback = todoOrdering.find(
+                (order) => order.id === payloadId,
+              );
+              if (todoOrderingIdUpdateIfCreatedByFallback)
+                todoOrderingIdUpdateIfCreatedByFallback.id = todo.todoId;
+            }
+          });
+          //clear the data from the diff
+          dispatch(clearTodoToCreate());
+          setSyncCount((c) => (c -= 1));
+        },
+        onError: () => {},
+      },
+    );
+  },
+);
