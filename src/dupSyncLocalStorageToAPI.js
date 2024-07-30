@@ -8,13 +8,13 @@ class SyncLocalStorageToAPI {
   _toCreatePendingState;
   _toCreatePayloadState;
   _token;
-  _modelState;
+  _getModelState;
   _request;
   _completeSync;
 
-  constructor(diffState, modelState, dispatcher, completeSync) {
+  constructor(diffState, getModelState, dispatcher, completeSync) {
     this._diffState = diffState;
-    this._modelState = modelState;
+    this._getModelState = getModelState;
     this._request = dispatcher;
     this._completeSync = completeSync;
     this._toCreatePendingState = {
@@ -133,7 +133,7 @@ class SyncLocalStorageToAPI {
 
     // //task not linked to todos to create payload body
     this._createTaskLinkedToAPITodoBody(
-      this._modelState.pendingTasks,
+      this._diffState.pendingTasks,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodo,
       this._toCreatePayloadState.createTaskPayload,
     );
@@ -446,11 +446,10 @@ class SyncLocalStorageToAPI {
         returnData,
         "todo",
       );
+      const modelTodos = this._getModelState().todo;
 
       payloadIds.forEach((payloadId, i) => {
-        let todo = this._modelState?.todo.find(
-          (todoId) => todoId.todoId === payloadId,
-        );
+        let todo = modelTodos.find((todoId) => todoId.todoId === payloadId);
 
         if (todo) todo = formattedReturnedData[i];
 
@@ -582,8 +581,8 @@ class SyncLocalStorageToAPI {
     )
       todoToCreateFilteredArray.forEach((todo) => {
         //get todo from modelState
-        const modelTodos = this._modelState?.todo;
-        const todoModelIndex = this._modelState?.todo.findIndex(
+        const modelTodos = this._getModelState()?.todo;
+        const todoModelIndex = modelTodos.findIndex(
           (modelTodo) => modelTodo.todoId === todo,
         );
         const todoBody = cloneDeep(modelTodos[todoModelIndex]);
@@ -724,8 +723,8 @@ class SyncLocalStorageToAPI {
 
   _filterToGetTaskBody(taskId, todoId, clone = true) {
     //get todo from modelState
-    const modelTodos = this._modelState?.todo;
-    const todoModelIndex = this._modelState?.todo.findIndex(
+    const modelTodos = this._getModelState()?.todo;
+    const todoModelIndex = modelTodos.findIndex(
       (modelTodo) => modelTodo.todoId === todoId,
     );
     const taskIndex = modelTodos[todoModelIndex].tasks.findIndex(

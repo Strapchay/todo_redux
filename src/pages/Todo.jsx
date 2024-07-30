@@ -441,33 +441,12 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
 function TodoRenderer() {
   const [initFormRendered, setInitFormRendered] = useState(false);
   const [syncUIActive, setSyncUIActive] = useState(true);
-  const [addedInitLocalData, setAddedInitLocalData] = useState(false);
-  const { startSync, syncLoading } = useSyncLocalStorageToAPI(
-    addedInitLocalData,
-    setAddedInitLocalData,
-  );
-  const { localState } = useContext(AppContext);
+  const { startSync, syncLoading } = useContext(AppContext);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (!syncLoading) {
-      console.log("the local state value", localState);
-      const { todos = null, diff = null } = localState ?? {};
-      console.log("the todos local", todos);
-      console.log("the diff local", diff);
-
-      if (todos) dispatch(setInitialTodoFromLocalStorage(todos));
-      if (diff) dispatch(setInitialDiffFromLocalStorage(diff));
-      console.log("added state from local storage");
-      //start the syncer
-      startSync?.(diff);
-      // setAddedInitLocalData((c) => true);
-    }
+    startSync();
   }, []);
-
-  // useEffect(() => {
-  //   if (localDataAdded) startSync();
-  // }, [localDataAdded, startSync]);
 
   // if (diff && diff.diffActive) {
   //   //TODO: implement sync functionality

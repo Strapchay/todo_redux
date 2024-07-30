@@ -4,6 +4,7 @@ import {
   APICreateDiffTodo,
   APIDeleteDiffTodo,
   deactivateDiff,
+  setInitialDiffFromLocalStorage,
   updateDiffState,
 } from "../slices/todo/diffSlice";
 import {
@@ -18,19 +19,21 @@ import { useEffect } from "react";
 import { useCallback } from "react";
 import SyncLocalStorageToAPI from "../dupSyncLocalStorageToAPI";
 import { AppContext } from "../ProtectedRoute";
+import { setInitialTodoFromLocalStorage } from "../slices/todo/todoSlice";
+import store from "../store";
+// import { AppContext } from "../ProtectedRoute";
 
 //TODO: instead of using a diffRef.current, load the diff to the diffState and add its active and then sync that data value to be a ble to use it with redux
-export function useSyncLocalStorageToAPI(localDataAdded, setLocalDataAdded) {
+export function useSyncLocalStorageToAPI(token, localState) {
   const dispatch = useDispatch();
   const [syncState, setSyncState] = useState(0);
   const [syncLoading, setSyncLoading] = useState(false);
   const syncLoadingRef = useRef(false);
   // const diff = useSelector((state) => state.diff);
-  const todos = useSelector((state) => state.todos);
   const toastRef = useRef();
   const diffRef = useRef();
   const modelState = useSelector((state) => state.todos);
-  const { token } = useContext(AppContext);
+  // const { localState } = useContext(AppContext);
 
   const pendingStateSync = useRef({
     pendingTodos: diffRef.current?.todoToCreate,
@@ -71,6 +74,27 @@ export function useSyncLocalStorageToAPI(localDataAdded, setLocalDataAdded) {
     [dispatch, token],
   );
 
+  function getModelState() {
+    return store.getState().todos;
+  }
+
+  useEffect(() => {
+    const { todos = null, diff = null } = localState;
+    if (todos) dispatch(setInitialTodoFromLocalStorage(todos));
+    if (diff) dispatch(setInitialDiffFromLocalStorage(diff));
+    diffRef.current = {
+      pendingTodos: diff?.todoToCreate,
+      pendingTasks: diff?.taskToCreate,
+      pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
+      pendingTasksToDelete: diff?.taskToDelete,
+      pendingTodoToUpdate: diff?.todoToUpdate,
+      pendingTaskToUpdate: diff?.taskToUpdate,
+      //ordering
+      pendingTodoOrdering: diff?.todoOrdering,
+      pendingTaskOrdering: diff?.taskOrdering,
+    };
+  }, [dispatch, localState]);
+
   const completeSyncAndLoadData = useCallback(() => {
     if (syncState <= 0) {
       setSyncState(0);
@@ -78,46 +102,30 @@ export function useSyncLocalStorageToAPI(localDataAdded, setLocalDataAdded) {
       dispatch(deactivateDiff());
       // persistDiff(diff);
       // TODO: find way to persist diff
-      setLocalDataAdded(false);
+      // setLocalDataAdded(false);
     }
-  }, [dispatch, setLocalDataAdded, syncState]);
+  }, [dispatch, syncState]);
 
   function handleSetSyncState(type) {
     if (type === "add") setSyncState((c) => (c += 1));
     if (type === "remove") setSyncState((c) => (c -= 1));
   }
 
-  const startSync = useCallback(
-    (diff) => {
-      if (!syncLoading.current) {
-        // setSyncLoading(true);
-        const diffState = {
-          pendingTodos: diff?.todoToCreate,
-          pendingTasks: diff?.taskToCreate,
-          pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
-          pendingTasksToDelete: diff?.taskToDelete,
-          pendingTodoToUpdate: diff?.todoToUpdate,
-          pendingTaskToUpdate: diff?.taskToUpdate,
-          //ordering
-          pendingTodoOrdering: diff?.todoOrdering,
-          pendingTaskOrdering: diff?.taskOrdering,
-        };
-        diffRef.current = diffState;
-        console.log("start syc diff st", diffState);
-        console.log("the todos val", todos);
-        const syncer = new SyncLocalStorageToAPI(
-          diffRef.current,
-          todos,
-          makeDispatch,
-          completeSyncAndLoadData,
-        );
-        const j = true;
-        if (j) return;
-        syncer.handleStartSync();
-      }
-    },
-    [todos, makeDispatch, completeSyncAndLoadData, syncLoading],
-  );
+  const startSync = useCallback(() => {
+    if (!syncLoading.current) {
+      // setSyncLoading(true);
+      console.log("start syc diff st", diffRef.current);
+      const syncer = new SyncLocalStorageToAPI(
+        diffRef.current,
+        getModelState,
+        makeDispatch,
+        completeSyncAndLoadData,
+      );
+      const j = true;
+      if (j) return;
+      syncer.handleStartSync();
+    }
+  }, [makeDispatch, completeSyncAndLoadData, syncLoading]);
 
   // _handleStartSync();
 

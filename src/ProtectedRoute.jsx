@@ -3,6 +3,10 @@ import { createContext, useEffect } from "react";
 // import PageLoader from "../components/PageLoader";
 import { useLocalStorageState } from "./hooks/useLocalStorageState";
 import Todo from "./pages/Todo";
+import { useDispatch } from "react-redux";
+import { setInitialTodoFromLocalStorage } from "./slices/todo/todoSlice";
+import { setInitialDiffFromLocalStorage } from "./slices/todo/diffSlice";
+import { useSyncLocalStorageToAPI } from "./hooks/useSyncLocalStorageToAPI";
 
 export const AppContext = createContext();
 
@@ -11,7 +15,13 @@ function AppContextProvider({ children }) {
     null,
     "token",
   );
+  const localState = getLocalStates();
+  const { startSync, syncLoading } = useSyncLocalStorageToAPI(
+    token,
+    localState,
+  );
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   //if not authenticated redirect to login page
   useEffect(
@@ -24,14 +34,15 @@ function AppContextProvider({ children }) {
     [token, navigate],
   );
 
-  if (token?.token)
+  if (token?.token) {
     return (
       <AppContext.Provider
-        value={{ token, getLocalStates, localState: getLocalStates() }}
+        value={{ token, getLocalStates, localState, startSync, syncLoading }}
       >
         {children}
       </AppContext.Provider>
     );
+  }
   return "";
 }
 
