@@ -87,8 +87,8 @@ const diffSlice = createSlice({
       state.taskOrdering = action.payload.ordering_list;
       state.diffActive = true;
     },
-    clearTodoToCreate(state) {
-      state.todoToCreate = [];
+    clearTodoItem(state, action) {
+      return { ...state, ...action.payload };
     },
     deactivateDiff(state) {
       state.diffActive = false;
@@ -118,7 +118,7 @@ export const {
   taskOrdering,
   deactivateDiff,
   activateSync,
-  clearTodoToCreate,
+  clearTodoItem,
   updateDiffState,
   setInitialDiffFromLocalStorage,
 } = diffSlice.actions;
@@ -126,13 +126,25 @@ export const {
 export const APICreateDiffTodo = createAsyncThunk(
   "todo/APICreateDiffTodo",
   async (
-    { token, createTodoPayload, pendingTodos, pendingRef, setSyncCount },
+    {
+      token,
+      createTodoPayload,
+      pendingTodos,
+      pendingState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
+    handleSetSyncState("add");
+    const payloadLength = createTodoPayload?.payload?.length;
     const res = await makeAPIRequest(
-      API.APIEnum.TODO.BATCH_CREATE,
-      batchRequestWrapper(createTodoPayload.payload, "batch_create"),
-      "createBatchTodo",
+      payloadLength > 1
+        ? API.APIEnum.TODO.BATCH_CREATE
+        : API.APIEnum.TODO.CREATE,
+      payloadLength > 1
+        ? batchRequestWrapper(createTodoPayload.payload, "batch_create")
+        : createTodoPayload.payload[0],
+      payloadLength > 1 ? "createBatchTodo" : "createTodo",
       token.token,
       "POST",
       {
@@ -143,11 +155,11 @@ export const APICreateDiffTodo = createAsyncThunk(
             data,
             "todo",
           );
-          createTodoPayload.payload.ids.forEach((payloadId, i) => {
+          createTodoPayload.ids.forEach((payloadId, i) => {
             const todo = formattedReturnedData[i];
             dispatch(updateTodo(todo));
 
-            const todoOrdering = pendingRef.current.pendingTodoOrdering;
+            const todoOrdering = pendingState.pendingTodoOrdering;
             if (todoOrdering.length > 0) {
               const todoOrderingIdUpdateIfCreatedByFallback = todoOrdering.find(
                 (order) => order.id === payloadId,
@@ -157,11 +169,51 @@ export const APICreateDiffTodo = createAsyncThunk(
             }
           });
           //clear the data from the diff
-          dispatch(clearTodoToCreate());
-          setSyncCount((c) => (c -= 1));
+          dispatch(clearTodoItem({ todoToCreate: [] }));
+          handleSetSyncState("remove");
         },
-        onError: () => {},
+        onError: () => {
+          handleSetSyncState("remove");
+        },
       },
     );
+  },
+);
+
+export const APIDeleteDiffTodo = createAsyncThunk(
+  "todo/APIDeleteDiffTodo",
+  async (
+    { token, pendingTodosToDelete, handleSetSyncState },
+    { dispatch, getState, rejectWithValue },
+  ) => {
+    handleSetSyncState("add");
+    const todosToDeleteLength = pendingTodosToDelete.length;
+    const j = true;
+    console.log("the pending todos to delete", pendingTodosToDelete);
+    if (j) return;
+    if (todosToDeleteLength > 0) {
+      //if todo doesn't exist in API it should return a NOT FOUND so no need to keep track of type of todo
+      const res = await makeAPIRequest(
+        todosToDeleteLength > 1
+          ? API.APIEnum.TODO.BATCH_DELETE
+          : API.APIEnum.TODO.DELETE(pendingTodosToDelete[0]),
+        todosToDeleteLength > 1
+          ? batchRequestWrapper(pendingTodosToDelete, "batch_delete")
+          : pendingTodosToDelete[0],
+
+        todosToDeleteLength > 1 ? "deleteTodoBatch" : "deleteTodo",
+        token.token,
+        "DELETE",
+        {
+          onSuccess: (data) => {
+            dispatch(clearTodoItem({ todoToDelete: [] }));
+            handleSetSyncState("remove");
+          },
+          onError: () => {
+            handleSetSyncState("remove");
+          },
+        },
+      );
+    }
   },
 );

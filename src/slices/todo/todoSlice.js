@@ -235,7 +235,7 @@ export const APICreateTodo = createAsyncThunk(
   "todo/APICreateTodo",
   async (token, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TODO.CREATE + "sdfsdfd/",
+      API.APIEnum.TODO.CREATE,
       { title: "" },
       "createTodo",
       token.token,
@@ -334,7 +334,7 @@ export const APIDeleteTodo = createAsyncThunk(
   "todo/APIDeleteTodo",
   async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TODO.DELETE(todoId),
+      API.APIEnum.TODO.DELETE(todoId) + "dfasdff/",
       null,
       "deleteTodo",
       token.token,

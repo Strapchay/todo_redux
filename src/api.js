@@ -35,7 +35,7 @@ export class API {
       BATCH_UPDATE_ORDERING: "todo/todos/batch_update_ordering/",
       BATCH_UPDATE: "todo/todos/batch_update/",
       DELETE: (todoId) => `todo/todos/${todoId}/`,
-      BATCH_DELETE: "todo/todos/batch_delete",
+      BATCH_DELETE: "todo/todos/batch_delete/",
     },
 
     TASK: {

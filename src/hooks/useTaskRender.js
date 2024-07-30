@@ -9,10 +9,10 @@ import {
   replaceTaskIndexForTodo,
   updateTodo,
 } from "../slices/todo/todoSlice";
-import { TodoContext } from "../pages/Todo";
+import { AppContext } from "../ProtectedRoute";
 
 export function useTaskRender() {
-  const { token } = useContext(TodoContext);
+  const { token } = useContext(AppContext);
   const [title, setTitle] = useState("");
 
   const [incompleteActiveDict, setIncompleteActiveDict] = useState(null);

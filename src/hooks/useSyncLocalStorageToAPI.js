@@ -1,43 +1,48 @@
 import { useContext, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { deactivateDiff, updateDiffState } from "../slices/todo/diffSlice";
+import {
+  APICreateDiffTodo,
+  APIDeleteDiffTodo,
+  deactivateDiff,
+  updateDiffState,
+} from "../slices/todo/diffSlice";
 import {
   batchRequestWrapper,
   formatAPIRequestBody,
   formatBatchCreatedReturnData,
   persistDiff,
 } from "../helpers";
-import { TodoContext } from "../pages/Todo";
 import toast from "react-hot-toast";
 import { API } from "../api";
 import { useEffect } from "react";
 import { useCallback } from "react";
+import SyncLocalStorageToAPI from "../dupSyncLocalStorageToAPI";
+import { AppContext } from "../ProtectedRoute";
 
-//TODO: instead of using a diff, load the diff to the diffState and add its active and then sync that data value to be a ble to use it with redux
-export function useSyncLocalStorageToAPI(localDataAdded) {
+//TODO: instead of using a diffRef.current, load the diff to the diffState and add its active and then sync that data value to be a ble to use it with redux
+export function useSyncLocalStorageToAPI(localDataAdded, setLocalDataAdded) {
   const dispatch = useDispatch();
   const [syncState, setSyncState] = useState(0);
   const [syncLoading, setSyncLoading] = useState(false);
-  const diff = useSelector((state) => state.diff);
+  const syncLoadingRef = useRef(false);
+  // const diff = useSelector((state) => state.diff);
+  const todos = useSelector((state) => state.todos);
   const toastRef = useRef();
+  const diffRef = useRef();
   const modelState = useSelector((state) => state.todos);
-  const token = { token: null };
+  const { token } = useContext(AppContext);
 
-  const pendingStateSync = useRef(
-    diff
-      ? {
-          pendingTodos: diff?.todoToCreate,
-          pendingTasks: diff?.taskToCreate,
-          pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
-          pendingTasksToDelete: diff?.taskToDelete,
-          pendingTodoToUpdate: diff?.todoToUpdate,
-          pendingTaskToUpdate: diff?.taskToUpdate,
-          //ordering
-          pendingTodoOrdering: diff?.todoOrdering,
-          pendingTaskOrdering: diff?.taskOrdering,
-        }
-      : {},
-  );
+  const pendingStateSync = useRef({
+    pendingTodos: diffRef.current?.todoToCreate,
+    pendingTasks: diffRef.current?.taskToCreate,
+    pendingTodosToDelete: diffRef.current?.todoToDelete?.map((todo) => +todo),
+    pendingTasksToDelete: diffRef.current?.taskToDelete,
+    pendingTodoToUpdate: diffRef.current?.todoToUpdate,
+    pendingTaskToUpdate: diffRef.current?.taskToUpdate,
+    //ordering
+    pendingTodoOrdering: diffRef.current?.todoOrdering,
+    pendingTaskOrdering: diffRef.current?.taskOrdering,
+  });
 
   const toCreatePendingState = useRef({
     createPendingTodos: [],
@@ -53,23 +58,68 @@ export function useSyncLocalStorageToAPI(localDataAdded) {
     createTodoToUpdatePayload: { payload: [], ids: [] },
     createTaskToUpdatePayload: { payload: [], ids: [] },
   });
-  function startSync() {
-    setSyncLoading(true);
-    _handleStartSync();
-  }
+  const makeDispatch = useCallback(
+    (payload, type) => {
+      if (type === "APICreateDiffTodo") {
+        console.log("the syncState val", setSyncState, payload);
+        dispatch(APICreateDiffTodo({ token, ...payload, handleSetSyncState }));
+      }
+      if (type === "APIDeleteDiffTodo") {
+        dispatch(APIDeleteDiffTodo({ token, ...payload, handleSetSyncState }));
+      }
+    },
+    [dispatch, token],
+  );
 
-  useEffect(() => {
-    if (localDataAdded) startSync();
-  }, [localDataAdded, startSync]);
-
-  function completeSyncAndLoadData() {
+  const completeSyncAndLoadData = useCallback(() => {
     if (syncState <= 0) {
       setSyncState(0);
-      setSyncLoading(false);
+      syncLoadingRef.current = false;
       dispatch(deactivateDiff());
-      persistDiff(diff);
+      // persistDiff(diff);
+      // TODO: find way to persist diff
+      setLocalDataAdded(false);
     }
+  }, [dispatch, setLocalDataAdded, syncState]);
+
+  function handleSetSyncState(type) {
+    if (type === "add") setSyncState((c) => (c += 1));
+    if (type === "remove") setSyncState((c) => (c -= 1));
   }
+
+  const startSync = useCallback(
+    (diff) => {
+      if (!syncLoading.current) {
+        // setSyncLoading(true);
+        const diffState = {
+          pendingTodos: diff?.todoToCreate,
+          pendingTasks: diff?.taskToCreate,
+          pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
+          pendingTasksToDelete: diff?.taskToDelete,
+          pendingTodoToUpdate: diff?.todoToUpdate,
+          pendingTaskToUpdate: diff?.taskToUpdate,
+          //ordering
+          pendingTodoOrdering: diff?.todoOrdering,
+          pendingTaskOrdering: diff?.taskOrdering,
+        };
+        diffRef.current = diffState;
+        console.log("start syc diff st", diffState);
+        console.log("the todos val", todos);
+        const syncer = new SyncLocalStorageToAPI(
+          diffRef.current,
+          todos,
+          makeDispatch,
+          completeSyncAndLoadData,
+        );
+        const j = true;
+        if (j) return;
+        syncer.handleStartSync();
+      }
+    },
+    [todos, makeDispatch, completeSyncAndLoadData, syncLoading],
+  );
+
+  // _handleStartSync();
 
   function _handleStartSync() {
     console.log("handle start sync started");
@@ -550,26 +600,26 @@ export function useSyncLocalStorageToAPI(localDataAdded) {
         }
       });
       //clear the data from the diff
-      diff.todoToCreate = [];
+      diffRef.todoToCreate = [];
     }
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function deleteTodoBatchCallBack(syncState, requestStatus) {
-    if (requestStatus) diff.todoToDelete = [];
+    if (requestStatus) diffRef.todoToDelete = [];
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function updateTodoBatchCallBack(syncState, requestStatus) {
-    if (requestStatus) diff.todoToUpdate = [];
+    if (requestStatus) diffRef.todoToUpdate = [];
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function updateTodoOrderingBatchCallback(syncState, requestStatus) {
-    if (requestStatus) diff.todoOrdering = [];
+    if (requestStatus) diffRef.todoOrdering = [];
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
@@ -600,26 +650,27 @@ export function useSyncLocalStorageToAPI(localDataAdded) {
         }
       });
       //clear the data from the diff
-      dispatch(updateDiffState({ ...diff, taskToCreate: [] }));
+      dispatch(updateDiffState({ ...diffRef.current, taskToCreate: [] }));
     }
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function deleteTaskBatchCallBack(syncState, requestStatus) {
-    if (requestStatus) diff.taskToDelete = [];
+    if (requestStatus) diffRef.taskToDelete = [];
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function updateTaskBatchCallBack(psyncState, requestStatus) {
-    if (requestStatus) dispatch(updateDiffState({ ...diff, taskToUpdate: [] }));
+    if (requestStatus)
+      dispatch(updateDiffState({ ...diffRef.current, taskToUpdate: [] }));
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
 
   function updateTaskOrderingBatchCallBack(syncState, requestStatus) {
-    if (requestStatus) diff.taskOrdering = [];
+    if (requestStatus) diffRef.taskOrdering = [];
     setSyncState((c) => (c -= 1));
     completeSyncAndLoadData();
   }
@@ -779,7 +830,7 @@ export function useSyncLocalStorageToAPI(localDataAdded) {
         );
       });
     else {
-      dispatch(updateDiffState({ ...diff, taskToCreate: [] }));
+      dispatch(updateDiffState({ ...diffRef.current, taskToCreate: [] }));
     }
   }
 
@@ -818,7 +869,7 @@ export function useSyncLocalStorageToAPI(localDataAdded) {
         }
       });
     else {
-      dispatch(updateDiffState({ ...diff, taskToUpdate: [] }));
+      dispatch(updateDiffState({ ...diffRef.current, taskToUpdate: [] }));
     }
   }
 
@@ -882,5 +933,5 @@ export function useSyncLocalStorageToAPI(localDataAdded) {
     toastRef.current = null;
   }
 
-  return { startSync, syncLoading };
+  return { startSync, syncLoading: syncLoadingRef.current };
 }

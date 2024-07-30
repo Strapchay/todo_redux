@@ -32,6 +32,7 @@ async function getDeleteRes(data, requestType) {
     let res;
     try {
       res = await data.json();
+      console.log("the res val", res);
     } catch (_) {
       res = null;
     }
@@ -41,6 +42,7 @@ async function getDeleteRes(data, requestType) {
 
     return res;
   }
+  if (requestType === "deleteTodoBatch") return await data.json();
 }
 
 export function getInitError(data) {
@@ -92,7 +94,7 @@ export async function makeAPIRequest(
   } catch (err) {
     console.log("triggered the error", err);
     if (extraActions)
-      extraActions.onError(action === "deleteTodo" ? err.message : null);
+      extraActions.onError(action === "deleteTodo" ? err?.message : null);
     throw new Error(err.message);
   }
   //`${ALERT_STATUS_ERRORS.find(s => s === res.status) ? }`
@@ -203,7 +205,7 @@ export const formatAPIRequestBody = (
 
     if (optionalType !== "update") {
       formattedBody.tasks = formatAPIRequestTodoTasks(
-        requestBody.tasks,
+        requestBody.task,
         "todoTask",
       );
       formattedBody.last_added = requestBody.lastAdded;
