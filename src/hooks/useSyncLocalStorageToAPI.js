@@ -2,7 +2,13 @@ import { useContext, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   APICreateDiffTodo,
+  APICreateDiffTodoTask,
   APIDeleteDiffTodo,
+  APIDeleteDiffTodoTask,
+  APIUpdateDiffTodo,
+  APIUpdateDiffTodoIndex,
+  APIUpdateDiffTodoTask,
+  APIUpdateDiffTodoTaskIndex,
   deactivateDiff,
   setInitialDiffFromLocalStorage,
   updateDiffState,
@@ -29,9 +35,10 @@ export function useSyncLocalStorageToAPI(token, localState) {
   const [syncState, setSyncState] = useState(0);
   const [syncLoading, setSyncLoading] = useState(false);
   const syncLoadingRef = useRef(false);
+  const syncRef = useRef(null);
   // const diff = useSelector((state) => state.diff);
   const toastRef = useRef();
-  const diffRef = useRef();
+  const diffRef = useRef(null);
   const modelState = useSelector((state) => state.todos);
   // const { localState } = useContext(AppContext);
 
@@ -63,13 +70,25 @@ export function useSyncLocalStorageToAPI(token, localState) {
   });
   const makeDispatch = useCallback(
     (payload, type) => {
+      const dict = { token, ...payload, handleSetSyncState };
       if (type === "APICreateDiffTodo") {
         console.log("the syncState val", setSyncState, payload);
-        dispatch(APICreateDiffTodo({ token, ...payload, handleSetSyncState }));
+        dispatch(APICreateDiffTodo(dict));
       }
       if (type === "APIDeleteDiffTodo") {
-        dispatch(APIDeleteDiffTodo({ token, ...payload, handleSetSyncState }));
+        dispatch(APIDeleteDiffTodo(dict));
       }
+      if (type === "APIUpdateDiffTodo") dispatch(APIUpdateDiffTodo(dict));
+      if (type === "APICreateDiffTodoTask")
+        dispatch(APICreateDiffTodoTask(dict));
+      if (type === "APIDeleteDiffTodoTask")
+        dispatch(APIDeleteDiffTodoTask(dict));
+      if (type === "APIUpdateDiffTodoTask")
+        dispatch(APIUpdateDiffTodoTask(dict));
+      if (type === "APIUpdateDiffTodoIndex")
+        dispatch(APIUpdateDiffTodoIndex(dict));
+      if (type === "APIUpdateDiffTodoTaskIndex")
+        dispatch(APIUpdateDiffTodoTaskIndex(dict));
     },
     [dispatch, token],
   );
@@ -79,21 +98,30 @@ export function useSyncLocalStorageToAPI(token, localState) {
   }
 
   useEffect(() => {
-    const { todos = null, diff = null } = localState;
-    if (todos) dispatch(setInitialTodoFromLocalStorage(todos));
-    if (diff) dispatch(setInitialDiffFromLocalStorage(diff));
-    diffRef.current = {
-      pendingTodos: diff?.todoToCreate,
-      pendingTasks: diff?.taskToCreate,
-      pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
-      pendingTasksToDelete: diff?.taskToDelete,
-      pendingTodoToUpdate: diff?.todoToUpdate,
-      pendingTaskToUpdate: diff?.taskToUpdate,
-      //ordering
-      pendingTodoOrdering: diff?.todoOrdering,
-      pendingTaskOrdering: diff?.taskOrdering,
-    };
-  }, [dispatch, localState]);
+    console.log("locals", localState);
+    if (localState) {
+      const { todos = null, diff = null } = localState;
+      if (todos) dispatch(setInitialTodoFromLocalStorage(todos));
+      if (diff) {
+        dispatch(setInitialDiffFromLocalStorage(diff));
+        console.log("diff before ref", diff);
+        const diffState = {
+          pendingTodos: diff?.todoToCreate,
+          pendingTasks: diff?.taskToCreate,
+          pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
+          pendingTasksToDelete: diff?.taskToDelete,
+          pendingTodoToUpdate: diff?.todoToUpdate,
+          pendingTaskToUpdate: diff?.taskToUpdate,
+          //ordering
+          pendingTodoOrdering: diff?.todoOrdering,
+          pendingTaskOrdering: diff?.taskOrdering,
+        };
+        console.log("the diff st", diffState);
+        diffRef.current = diffState;
+        console.log("diff ref", diffRef.current);
+      }
+    }
+  }, [dispatch]);
 
   const completeSyncAndLoadData = useCallback(() => {
     if (syncState <= 0) {
@@ -102,7 +130,7 @@ export function useSyncLocalStorageToAPI(token, localState) {
       dispatch(deactivateDiff());
       // persistDiff(diff);
       // TODO: find way to persist diff
-      // setLocalDataAdded(false);
+      // setLocalDataAdded(false);}
     }
   }, [dispatch, syncState]);
 
@@ -115,15 +143,16 @@ export function useSyncLocalStorageToAPI(token, localState) {
     if (!syncLoading.current) {
       // setSyncLoading(true);
       console.log("start syc diff st", diffRef.current);
-      const syncer = new SyncLocalStorageToAPI(
-        diffRef.current,
-        getModelState,
-        makeDispatch,
-        completeSyncAndLoadData,
-      );
-      const j = true;
-      if (j) return;
-      syncer.handleStartSync();
+      if (diffRef.current) {
+        const diffState = { ...diffRef.current };
+        const syncer = new SyncLocalStorageToAPI(
+          diffState,
+          getModelState,
+          makeDispatch,
+          completeSyncAndLoadData,
+        );
+        syncer.handleStartSync();
+      }
     }
   }, [makeDispatch, completeSyncAndLoadData, syncLoading]);
 

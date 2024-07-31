@@ -1,4 +1,8 @@
-import { formatAPIRequestBody, formatAPIResponseBody } from "./helpers.js";
+import {
+  filterToGetTaskBody,
+  formatAPIRequestBody,
+  formatAPIResponseBody,
+} from "./helpers.js";
 import { API } from "./api.js";
 import { cloneDeep } from "lodash";
 import { APICreateDiffTodo } from "./slices/todo/diffSlice.js";
@@ -58,31 +62,31 @@ class SyncLocalStorageToAPI {
     );
 
     //todo to update passes deleted check
-    // this._filterDeletedObjectsFromObjects(
-    //   this.pendingTodoToUpdate,
-    //   this.pendingTodosToDelete,
-    //   null,
-    //   this.createPendingTodosToUpdate,
-    //   "todo",
-    // );
+    this._filterDeletedObjectsFromObjects(
+      this._diffState.pendingTodoToUpdate,
+      this._diffState.pendingTodosToDelete,
+      null,
+      this._toCreatePendingState.createPendingTodosToUpdate,
+      "todo",
+    );
 
-    // //task to create passes deleted check
-    // this._filterDeletedObjectsFromObjects(
-    //   this.pendingTasks,
-    //   this.pendingTasksToDelete,
-    //   this.pendingTodosToDelete,
-    //   this.createPendingTasks,
-    //   "task",
-    // );
+    //task to create passes deleted check
+    this._filterDeletedObjectsFromObjects(
+      this._diffState.pendingTasks,
+      this._diffState.pendingTasksToDelete,
+      this._diffState.pendingTodosToDelete,
+      this._toCreatePendingState.createPendingTasks,
+      "task",
+    );
 
-    // //task to update passes deleted check
-    // this._filterDeletedObjectsFromObjects(
-    //   this.pendingTaskToUpdate,
-    //   this.pendingTasksToDelete,
-    //   this.pendingTodosToDelete,
-    //   this.createPendingTasksToUpdate,
-    //   "task",
-    // );
+    //task to update passes deleted check
+    this._filterDeletedObjectsFromObjects(
+      this._diffState.pendingTaskToUpdate,
+      this._diffState.pendingTasksToDelete,
+      this._diffState.pendingTodosToDelete,
+      this._toCreatePendingState.createPendingTasksToUpdate,
+      "task",
+    );
   }
 
   _createPropertiesPayload() {
@@ -101,11 +105,6 @@ class SyncLocalStorageToAPI {
       this._toCreatePayloadState.createTodoToUpdatePayload,
     );
 
-    console.log(
-      "the created todo to update payload",
-      this._toCreatePayloadState,
-    );
-
     //sort tasks which are not linked to todos to create
     this._filterPendingTaskLinkedToAPITodo(
       this._diffState.pendingTasks,
@@ -113,10 +112,6 @@ class SyncLocalStorageToAPI {
       this._toCreatePendingState.createPendingTodos,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodo,
     );
-    // console.log(
-    //   "the filtered pending tasks linked to api todo",
-    //   this.createPendingTaskLinkedToAPITodo,
-    // );
 
     // //sort tasks which are not linked to todos to update
     this._filterPendingTaskLinkedToAPITodo(
@@ -126,32 +121,20 @@ class SyncLocalStorageToAPI {
       this._toCreatePendingState.createPendingTaskLinkedToAPITodoToUpdate,
     );
 
-    // console.log(
-    //   "the filtered pending tasks to update linked to api todo",
-    //   this.createPendingTaskLinkedToAPITodoToUpdate,
-    // );
-
-    // //task not linked to todos to create payload body
+    //task not linked to todos to create payload body
     this._createTaskLinkedToAPITodoBody(
       this._diffState.pendingTasks,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodo,
       this._toCreatePayloadState.createTaskPayload,
     );
 
-    // console.log(this.createTaskPayload, "task to create payload for api todo ");
-
-    // //sort tasks which are to be updated not in createPendingTaskLinkedToAPITodo Array
+    //sort tasks which are to be updated not in createPendingTaskLinkedToAPITodo Array
     this._createTaskToUpdateBody(
       this._diffState.pendingTaskToUpdate,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodoToUpdate,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodo,
       this._toCreatePayloadState.createTaskToUpdatePayload,
     );
-
-    // console.log(
-    //   this.createTaskToUpdatePayload,
-    //   "task to update payload for api todo",
-    // );
   }
 
   _makePropertiesRequest() {
@@ -162,57 +145,54 @@ class SyncLocalStorageToAPI {
     );
 
     //create batch todoToDelete
-    console.log(
-      "the todos being deltetd",
-      this._diffState.pendingTodosToDelete,
-    );
     this._makeTodoDeleteRequest(this._diffState.pendingTodosToDelete);
 
-    // //create batch todoUpdate
-    // this._makeTodoUpdateRequest(
-    //   this.createTodoToUpdatePayload,
-    //   this.pendingTodoToUpdate,
-    // );
-
+    //create batch todoUpdate
+    this._makeTodoUpdateRequest(
+      this._toCreatePayloadState.createTodoToUpdatePayload,
+      this._diffState.pendingTodoToUpdate,
+    );
     // //create batch taskToCreate
-    // this._makeTaskToCreateRequest(this.createTaskPayload, this.pendingTasks);
+    this._makeTaskToCreateRequest(
+      this._toCreatePayloadState.createTaskPayload,
+      this._diffState.pendingTasks,
+    );
 
-    // //create batch taskToDelete
-    // this._makeTaskToDeleteRequest(this.pendingTasksToDelete);
+    //create batch taskToDelete
+    this._makeTaskToDeleteRequest(this._diffState.pendingTasksToDelete);
 
-    // //create batch taskToUpdate
-    // this._makeTaskToUpdateRequest(
-    //   this.createTaskToUpdatePayload,
-    //   this.pendingTaskToUpdate,
-    // );
+    //create batch taskToUpdate
+    this._makeTaskToUpdateRequest(
+      this._toCreatePayloadState.createTaskToUpdatePayload,
+      this._diffState.pendingTaskToUpdate,
+    );
 
-    // //update ordering todo
-    // if (this.pendingTodoOrdering.length > 0) {
-    //   this._syncState.count += 1;
-    //   this._makeOrderingUpdateRequest(
-    //     this.pendingTodoOrdering,
-    //     "todo",
-    //     this._updateTodoOrderingBatchCallback,
-    //   );
-    // }
+    //update ordering todo
+    this._makeOrderingUpdateRequest(
+      this._diffState.pendingTodoOrdering,
+      "todo",
+    );
 
     // //update ordering task
-    // if (this.pendingTaskOrdering.length > 0) {
-    //   this._syncState.count += 1;
-    //   this._makeOrderingUpdateRequest(
-    //     this.pendingTaskOrdering,
-    //     "task",
-    //     this._updateTaskOrderingBatchCallBack,
-    //   );
-    // }
+    this._makeOrderingUpdateRequest(
+      this._diffState.pendingTaskOrdering,
+      "task",
+    );
   }
 
   _makeTodoCreateRequest(createTodoPayload, pendingTodos) {
+    function setPendingCreatesToNull() {
+      this._diffState.pendingTodos = [];
+    }
     //create batch todoToCreate
     if (createTodoPayload.payload.length > 0) {
       const pendingState = this._diffState;
       this._request(
-        { createTodoPayload, pendingTodos, pendingState },
+        {
+          createTodoPayload,
+          pendingState,
+          setReqState: setPendingCreatesToNull.bind(this),
+        },
         "APICreateDiffTodo",
       );
     }
@@ -220,208 +200,114 @@ class SyncLocalStorageToAPI {
 
   _makeTodoDeleteRequest(pendingTodosToDelete) {
     //create batch todoToDelete
+    function setPendingDeletesToNull() {
+      this._diffState.pendingTodosToDelete = [];
+    }
+
     if (pendingTodosToDelete.length > 0)
-      this._request({ pendingTodosToDelete }, "APIDeleteDiffTodo");
+      this._request(
+        {
+          pendingTodosToDelete,
+          setReqState: setPendingDeletesToNull.bind(this),
+        },
+        "APIDeleteDiffTodo",
+      );
   }
 
   _makeTodoUpdateRequest(createTodoToUpdatePayload, pendingTodoToUpdate) {
+    function setPendingUpdatesToNull() {
+      this._diffState.pendingTodoToUpdate = [];
+    }
     //create batch todoUpdate
-    if (createTodoToUpdatePayload.payload.length > 0) {
-      const todosToUpdateLength = createTodoToUpdatePayload.payload.length;
-
-      if (todosToUpdateLength > 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TODO.BATCH_UPDATE,
-          this._batchRequestWrapper(
-            createTodoToUpdatePayload.payload,
-            "batch_update",
-          ),
-          pendingTodoToUpdate,
-          "updateBatchTodo",
-          this._updateTodoBatchCallBack.bind(
-            this,
-            createTodoToUpdatePayload.ids,
-          ),
-          "PATCH",
-          true,
-        );
-        this._syncState.count += 1;
-      }
-
-      if (todosToUpdateLength == 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TODO.PATCH(
-            Number(createTodoToUpdatePayload.payload[0].id),
-          ),
-          createTodoToUpdatePayload.payload[0],
-          pendingTodoToUpdate,
-          "updateTodo",
-          this._updateTodoBatchCallBack.bind(
-            this,
-            createTodoToUpdatePayload.ids,
-          ),
-          "PATCH",
-          true,
-        );
-        this._syncState.count += 1;
-      }
+    const todosToUpdateLength = createTodoToUpdatePayload?.payload?.length;
+    if (todosToUpdateLength > 0) {
+      this._request(
+        {
+          createTodoToUpdatePayload,
+          setReqState: setPendingUpdatesToNull.bind(this),
+        },
+        "APIUpdateDiffTodo",
+      );
     }
   }
 
   _makeTaskToCreateRequest(createTasksPayload, pendingTasks) {
+    function setPendingCreatesToNull() {
+      this._diffState.pendingTasks = [];
+    }
+
+    function updatePendingTaskOrdering(payload, task) {
+      const pendingTaskOrdering = this._diffState.pendingTaskOrdering;
+      if (pendingTaskOrdering.length > 0) {
+        const taskOrderingIdUpdateIfCreatedByFallback =
+          pendingTaskOrdering.find(
+            (taskOrder) => taskOrder.id === payload.taskId,
+          );
+        if (taskOrderingIdUpdateIfCreatedByFallback)
+          taskOrderingIdUpdateIfCreatedByFallback.id = task.taskId;
+      }
+    }
+
     //create batch taskToCreate
-    if (createTasksPayload.payload.length > 0) {
-      const tasksToCreateLength = createTasksPayload.payload.length;
-
-      if (tasksToCreateLength > 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TASK.BATCH_CREATE,
-          this._batchRequestWrapper(createTasksPayload.payload, "batch_create"),
-          pendingTasks,
-          "createBatchTask",
-          this._createTaskBatchCallBack.bind(this, createTasksPayload.ids),
-          "POST",
-          true,
-        );
-        this._syncState.count += 1;
-      }
-
-      if (tasksToCreateLength == 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TASK.CREATE,
-          createTasksPayload.payload[0],
-          pendingTasks,
-          "createTask",
-          this._createTaskBatchCallBack.bind(this, createTasksPayload.ids),
-          "POST",
-          true,
-        );
-        this._syncState.count += 1;
-      }
+    const tasksToCreateLength = createTasksPayload?.payload?.length;
+    if (tasksToCreateLength > 0) {
+      console.log("got througher here");
+      this._request(
+        {
+          createTasksPayload,
+          updateOrderingState: updatePendingTaskOrdering.bind(this),
+          setReqState: setPendingCreatesToNull.bind(this),
+          getModelState: this._getModelState.bind(this),
+        },
+        "APICreateDiffTodoTask",
+      );
     }
   }
 
   _makeTaskToDeleteRequest(pendingTasksToDelete) {
+    function setPendingDeletesNull() {
+      this._diffState.pendingTasksToDelete = [];
+    }
+
     //create batch taskToDelete
-    if (pendingTasksToDelete.length > 0) {
-      const tasksToDeleteLength = pendingTasksToDelete.length;
-
-      const pendingTasksToDeletePayload = pendingTasksToDelete.map(
-        (task) => task.taskId,
+    const tasksToDeleteLength = pendingTasksToDelete?.length;
+    if (tasksToDeleteLength > 0) {
+      this._request(
+        { pendingTasksToDelete, setReqState: setPendingDeletesNull },
+        "APIDeleteDiffTodoTask",
       );
-
-      if (tasksToDeleteLength > 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TASK.BATCH_DELETE,
-          this._batchRequestWrapper(
-            pendingTasksToDeletePayload,
-            "batch_delete",
-          ),
-          pendingTasksToDelete,
-          "deleteBatchTask",
-          this._deleteTaskBatchCallBack.bind(this, pendingTasksToDelete),
-          "DELETE",
-          true,
-        );
-        this._syncState.count += 1;
-      }
-
-      if (tasksToDeleteLength == 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TASK.DELETE(pendingTasksToDeletePayload[0]),
-          pendingTasksToDeletePayload[0],
-          pendingTasksToDelete,
-          "deleteTask",
-          this._deleteTaskBatchCallBack.bind(this, pendingTasksToDelete),
-          "DELETE",
-          true,
-        );
-        this._syncState.count += 1;
-      }
     }
   }
 
   _makeTaskToUpdateRequest(createTaskToUpdatePayload, pendingTaskToUpdate) {
+    function setPendingUpdatesNull() {
+      this._diffState.taskToUpdate = [];
+    }
     //create batch taskToUpdate
-    if (pendingTaskToUpdate.length > 0) {
-      const taskToUpdateLength = createTaskToUpdatePayload.payload.length;
-
-      if (taskToUpdateLength > 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TASK.BATCH_UPDATE,
-          this._batchRequestWrapper(
-            createTaskToUpdatePayload.payload,
-            "batch_update",
-          ),
-          pendingTaskToUpdate,
-          "updateBatchTask",
-          this._updateTaskBatchCallBack.bind(
-            this,
-            createTaskToUpdatePayload.ids,
-          ),
-          "PATCH",
-          true,
-        );
-        this._syncState.count += 1;
-      }
-
-      if (taskToUpdateLength == 1) {
-        this._makeBatchRequest(
-          API.APIEnum.TASK.PATCH(createTaskToUpdatePayload.payload[0].id),
-          createTaskToUpdatePayload.payload[0],
-          pendingTaskToUpdate,
-          "updateTask",
-          this._updateTaskBatchCallBack.bind(
-            this,
-            createTaskToUpdatePayload.ids,
-          ),
-          "PATCH",
-          true,
-        );
-        this._syncState.count += 1;
-      }
-    }
-  }
-
-  _getOrderingUrlFromType(orderingLength, orderingType, objId = undefined) {
-    if (orderingLength > 1) {
-      if (orderingType === "todo")
-        return API.APIEnum.TODO.BATCH_UPDATE_ORDERING;
-      if (orderingType === "task")
-        return API.APIEnum.TASK.BATCH_UPDATE_ORDERING;
-    }
-    if (orderingLength === 1) {
-      if (orderingType === "todo") return API.APIEnum.TODO.PATCH(objId);
-      if (orderingType === "task") return API.APIEnum.TASK.PATCH(objId);
-    }
-  }
-
-  _makeOrderingUpdateRequest(orderingPayload, type, orderingCallBack) {
-    if (orderingPayload.length > 1) {
-      this._makeBatchRequest(
-        this._getOrderingUrlFromType(orderingPayload.length, type),
-        this._batchRequestWrapper(orderingPayload, "batch_update_ordering"),
-        null,
-        "updateOrdering",
-        orderingCallBack,
-        "PATCH",
-        true,
+    const taskToUpdateLength = createTaskToUpdatePayload?.payload?.length;
+    if (taskToUpdateLength > 0) {
+      this._request(
+        {
+          createTaskToUpdatePayload,
+          setReqState: setPendingUpdatesNull.bind(this),
+        },
+        "APIUpdateDiffTodoTask",
       );
     }
+  }
 
-    if (orderingPayload.length === 1) {
-      this._makeBatchRequest(
-        this._getOrderingUrlFromType(
-          orderingPayload.length,
-          type,
-          orderingPayload[0].id,
-        ),
-        orderingPayload,
-        null,
-        "updateOrdering",
-        orderingCallBack,
-        "PATCH",
-        true,
+  _makeOrderingUpdateRequest(orderingPayload, type) {
+    function setPendingOrderingsNull(type) {
+      if (type === "todo") this._diffState.todoOrdering = [];
+      if (type === "task") this._diffState.taskOrdering = [];
+    }
+
+    if (orderingPayload?.length > 1) {
+      this._request(
+        { orderingPayload, type, setReqState: setPendingOrderingsNull },
+        type === "todo"
+          ? "APIUpdateDiffTodoIndex"
+          : "APIUpdateDiffTodoTaskIndex",
       );
     }
   }
@@ -440,86 +326,8 @@ class SyncLocalStorageToAPI {
     return formattedReturnedData;
   }
 
-  _createTodoBatchCallBack(payloadIds, returnData, requestStatus) {
-    if (requestStatus) {
-      const formattedReturnedData = this._formatBatchCreatedReturnData(
-        returnData,
-        "todo",
-      );
-      const modelTodos = this._getModelState().todo;
-
-      payloadIds.forEach((payloadId, i) => {
-        let todo = modelTodos.find((todoId) => todoId.todoId === payloadId);
-
-        if (todo) todo = formattedReturnedData[i];
-
-        if (this.pendingTodoOrdering.length > 0) {
-          const todoOrderingIdUpdateIfCreatedByFallback =
-            this.pendingTodoOrdering.find(
-              (todoOrder) => todoOrder.id === payloadId,
-            );
-          if (todoOrderingIdUpdateIfCreatedByFallback)
-            todoOrderingIdUpdateIfCreatedByFallback.id = todo.todoId;
-        }
-      });
-      //clear the data from the diff
-      this._diffState.todoToCreate = [];
-    }
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
-  }
-  _deleteTodoBatchCallBack(deletePayload, returnData, requestStatus) {
-    if (requestStatus) this._diffState.todoToDelete = [];
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
-  }
-
-  _updateTodoBatchCallBack(payloadIds, returnData, requestStatus) {
-    if (requestStatus) this._diffState.todoToUpdate = [];
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
-  }
-
   _updateTodoOrderingBatchCallback(returnData, requestStatus) {
     if (requestStatus) this._diffState.todoOrdering = [];
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
-  }
-
-  _createTaskBatchCallBack(payloadIds, returnData, requestStatus) {
-    if (requestStatus) {
-      const formattedReturnedData = this._formatBatchCreatedReturnData(
-        returnData,
-        "task",
-      );
-
-      payloadIds.forEach((payloadId, i) => {
-        let task = this._filterToGetTaskBody(
-          payloadId.taskId,
-          payloadId.todoId,
-          false,
-        );
-
-        if (task) task = formattedReturnedData[i];
-
-        if (this.pendingTaskOrdering.length > 0) {
-          const taskOrderingIdUpdateIfCreatedByFallback =
-            this.pendingTaskOrdering.find(
-              (taskOrder) => taskOrder.id === payloadId.taskId,
-            );
-          if (taskOrderingIdUpdateIfCreatedByFallback)
-            taskOrderingIdUpdateIfCreatedByFallback.id = task.taskId;
-        }
-      });
-      //clear the data from the diff
-      this._diffState.taskToCreate = [];
-    }
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
-  }
-
-  _deleteTaskBatchCallBack(payloadIds, returnData, requestStatus) {
-    if (requestStatus) this._diffState.taskToDelete = [];
     this._syncState.count -= 1;
     this._completeSyncAndLoadData();
   }
@@ -576,8 +384,8 @@ class SyncLocalStorageToAPI {
   ) {
     //create todo payload
     if (
-      todoToCreateDiffArray.length > 0 &&
-      todoToCreateFilteredArray.length > 0
+      todoToCreateDiffArray?.length > 0 &&
+      todoToCreateFilteredArray?.length > 0
     )
       todoToCreateFilteredArray.forEach((todo) => {
         //get todo from modelState
@@ -609,8 +417,8 @@ class SyncLocalStorageToAPI {
   ) {
     //create todo to update payload
     if (
-      todoToUpdateDiffArray.length > 0 &&
-      todoToUpdateFilteredArray.length > 0
+      todoToUpdateDiffArray?.length > 0 &&
+      todoToUpdateFilteredArray?.length > 0
     )
       todoToUpdateFilteredArray.forEach((todo) => {
         const todoToUpdateExistsInTodoToCreate = todoToCreateFilteredArray.some(
@@ -637,9 +445,9 @@ class SyncLocalStorageToAPI {
   ) {
     //sort tasks which are not linked to todos to create
     if (
-      tasksToCreateDiffArray.length > 0 &&
-      tasksToCreateFilteredArray.length > 0
-    )
+      tasksToCreateDiffArray?.length > 0 &&
+      tasksToCreateFilteredArray?.length > 0
+    ) {
       tasksToCreateFilteredArray.forEach((task) => {
         const pendingTaskTodoExistsInPendingTodos =
           todoToCreateFilteredArray.some((todo) => todo.todoId === task.todoId);
@@ -647,7 +455,9 @@ class SyncLocalStorageToAPI {
         if (!pendingTaskTodoExistsInPendingTodos)
           pendingTaskLinkedToAPITodoArray.push(task);
       });
+    }
   }
+  _filterToGetTaskBody(a, b) {}
 
   _createTaskLinkedToAPITodoBody(
     taskToCreateDiffArray,
@@ -660,7 +470,11 @@ class SyncLocalStorageToAPI {
       pendingTaskLinkedToAPITodoArray.length > 0
     )
       pendingTaskLinkedToAPITodoArray.forEach((task) => {
-        const taskBody = this._filterToGetTaskBody(task.taskId, task.todoId);
+        const taskBody = filterToGetTaskBody(
+          this._getModelState.bind(this),
+          task.taskId,
+          task.todoId,
+        );
 
         taskToCreatePayloadArray.ids.push({
           taskId: task.taskId,
@@ -690,8 +504,8 @@ class SyncLocalStorageToAPI {
   ) {
     //sort tasks which are to be updated not in createPendingTaskLinkedToAPITodo Array
     if (
-      taskToUpdateDiffArray.length > 0 &&
-      pendingTaskLinkedToAPITodoToUpdate.length > 0
+      taskToUpdateDiffArray?.length > 0 &&
+      pendingTaskLinkedToAPITodoToUpdate?.length > 0
     )
       pendingTaskLinkedToAPITodoToUpdate.forEach((task) => {
         // const taskToUpdateExists
@@ -700,7 +514,11 @@ class SyncLocalStorageToAPI {
         );
 
         if (!taskToUpdateExistsInTaskAPITodo) {
-          const taskBody = this._filterToGetTaskBody(task.taskId, task.todoId);
+          const taskBody = filterToGetTaskBody(
+            this._getModelState.bind(this),
+            task.taskId,
+            task.todoId,
+          );
           // taskBody.todoId = task.todoId
           taskToUpdatePayloadArray.ids.push({
             taskId: task.taskId,
@@ -719,21 +537,6 @@ class SyncLocalStorageToAPI {
     else {
       this._diffState.taskToUpdate = [];
     }
-  }
-
-  _filterToGetTaskBody(taskId, todoId, clone = true) {
-    //get todo from modelState
-    const modelTodos = this._getModelState()?.todo;
-    const todoModelIndex = modelTodos.findIndex(
-      (modelTodo) => modelTodo.todoId === todoId,
-    );
-    const taskIndex = modelTodos[todoModelIndex].tasks.findIndex(
-      (modelTask) => modelTask.taskId === taskId,
-    );
-    if (!clone) return modelTodos[todoModelIndex].tasks[taskIndex];
-
-    const taskBody = cloneDeep(modelTodos[todoModelIndex].tasks[taskIndex]);
-    return taskBody;
   }
 
   _makeBatchRequest(

@@ -34,9 +34,7 @@ const todoSlice = createSlice({
       // const modState = action.payload;
       // console.log("the modState value", modState);
       // state = { ...modState };
-      console.log("the action payload", action.payload);
       return { ...action.payload };
-      // return state;
     },
     createTodo: {
       prepare(payload) {
@@ -461,6 +459,7 @@ export const APIUpdateTodoTask = createAsyncThunk(
             taskId: task.taskId,
             completed: task.completed,
             todoLastAdded: currentTodo.lastAdded,
+            todoId: currentTodoId,
           };
           dispatch(taskToUpdate(payload));
           const todos = getState().todos;
@@ -519,7 +518,7 @@ export const APIUpdateTodoTaskIndex = createAsyncThunk(
     const payload = { ordering_list: listItems };
 
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.BATCH_UPDATE_ORDERING,
+      API.APIEnum.TASK.BATCH_UPDATE_ORDERING + "sdfasd/",
       payload,
       "updateTask",
       token.token,

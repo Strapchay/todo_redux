@@ -1,3 +1,4 @@
+import { API } from "./api";
 import { ALERT_STATUS_ERRORS, BASE_API_URL, successCodes } from "./constants";
 
 // function getRequestResponse(res, query, resStatus) {
@@ -28,7 +29,7 @@ export function persistDiff(state) {
 
 async function getDeleteRes(data, requestType) {
   if (requestType === "deleteTask") return null;
-  if (requestType === "deleteTodo") {
+  if (["deleteTodo", "deleteTodoBatch"].includes(requestType)) {
     let res;
     try {
       res = await data.json();
@@ -42,12 +43,10 @@ async function getDeleteRes(data, requestType) {
 
     return res;
   }
-  if (requestType === "deleteTodoBatch") return await data.json();
+  // if (requestType === "deleteTodoBatch") return await data.json();
 }
 
 export function getInitError(data) {
-  console.log("theye of data", typeof data);
-  console.log("theye of data", data);
   if (typeof data === "object") {
     const errorKeys = Object.keys(data);
     console.log("the error keys", errorKeys);
@@ -60,6 +59,38 @@ export function getInitError(data) {
 export const formatDateTime = (dateTime) => {
   return new Date(dateTime);
 };
+
+export function getOrderingUrlFromType(
+  orderingLength,
+  orderingType,
+  objId = undefined,
+) {
+  if (orderingLength > 1) {
+    if (orderingType === "todo") return API.APIEnum.TODO.BATCH_UPDATE_ORDERING;
+    if (orderingType === "task") return API.APIEnum.TASK.BATCH_UPDATE_ORDERING;
+  }
+  if (orderingLength === 1) {
+    if (orderingType === "todo") return API.APIEnum.TODO.PATCH(objId);
+    if (orderingType === "task") return API.APIEnum.TASK.PATCH(objId);
+  }
+}
+
+export function filterToGetTaskBody(getModel, taskId, todoId, clone = true) {
+  //get todo from modelState
+  const modelTodos = getModel()?.todo;
+  const todoModelIndex = modelTodos.findIndex(
+    (modelTodo) => modelTodo.todoId === todoId,
+  );
+  const taskIndex = modelTodos[todoModelIndex].task.findIndex(
+    (modelTask) => modelTask.taskId === taskId,
+  );
+  if (!clone) return modelTodos[todoModelIndex].task[taskIndex];
+
+  const taskBody = JSON.parse(
+    JSON.stringify(modelTodos[todoModelIndex].task[taskIndex]),
+  );
+  return taskBody;
+}
 
 export async function makeAPIRequest(
   url,
