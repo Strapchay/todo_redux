@@ -1,5 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { APICreateTodo, updateTodo } from "./todoSlice";
+import {
+  APICreateTodo,
+  replaceTodos,
+  setInitialTodoFromLocalStorage,
+  updateTodo,
+} from "./todoSlice";
 import {
   batchRequestWrapper,
   filterToGetTaskBody,
@@ -146,15 +151,17 @@ export const APICreateDiffTodo = createAsyncThunk(
       "POST",
       {
         onSuccess: (data) => {
-          const todos = getState().todos.todo;
-          //TODO: imp differ
           const formattedReturnedData = formatBatchCreatedReturnData(
             data,
             "todo",
           );
           createTodoPayload.ids.forEach((payloadId, i) => {
-            const todo = formattedReturnedData[i];
-            dispatch(updateTodo(todo));
+            const todos = [...getState().todos.todo];
+            const todoIndex = todos.findIndex(
+              (todo) => todo.todoId === payloadId,
+            );
+            todos[todoIndex] = formattedReturnedData[i];
+            dispatch(replaceTodos(todos));
 
             const todoOrdering = pendingState.pendingTodoOrdering;
             if (todoOrdering.length > 0) {
@@ -162,17 +169,21 @@ export const APICreateDiffTodo = createAsyncThunk(
                 (order) => order.id === payloadId,
               );
               if (todoOrderingIdUpdateIfCreatedByFallback)
-                todoOrderingIdUpdateIfCreatedByFallback.id = todo.todoId;
+                todoOrderingIdUpdateIfCreatedByFallback.id =
+                  formattedReturnedData[i].todoId;
             }
           });
           //clear the data from the diff
           dispatch(clearTodoItem({ todoToCreate: [] }));
           setReqState();
-          // persistDiff(pendingState);
+          const diff = getState().diff;
+          persistDiff(diff);
           handleSetSyncState("remove");
         },
         onError: () => {
           handleSetSyncState("remove");
+          const diff = getState().diff;
+          persistDiff(diff);
         },
       },
     );
@@ -204,12 +215,15 @@ export const APIDeleteDiffTodo = createAsyncThunk(
           onSuccess: (data) => {
             dispatch(clearTodoItem({ todoToDelete: [] }));
             setReqState();
-
+            const diff = getState().diff;
+            persistDiff(diff);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
           onError: () => {
             handleSetSyncState("remove");
+            const diff = getState().diff;
+            persistDiff(diff);
           },
         },
       );
@@ -245,11 +259,15 @@ export const APIUpdateDiffTodo = createAsyncThunk(
             //clear the data from the diff
             dispatch(clearTodoItem({ todoToUpdate: [] }));
             setReqState();
+            const diff = getState().diff;
+            persistDiff(diff);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
           onError: () => {
             handleSetSyncState("remove");
+            const diff = getState().diff;
+            persistDiff(diff);
           },
         },
       );
@@ -284,11 +302,15 @@ export const APIUpdateDiffTodoIndex = createAsyncThunk(
             //clear the data from the diff
             dispatch(clearTodoItem({ todoOrdering: [] }));
             setReqState();
+            const diff = getState().diff;
+            persistDiff(diff);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
           onError: () => {
             handleSetSyncState("remove");
+            const diff = getState().diff;
+            persistDiff(diff);
           },
         },
       );
@@ -325,7 +347,6 @@ export const APICreateDiffTodoTask = createAsyncThunk(
         "POST",
         {
           onSuccess: (data) => {
-            const todos = getState().todos.todo;
             //TODO: imp differ
             const formattedReturnedData = formatBatchCreatedReturnData(
               data,
@@ -333,21 +354,32 @@ export const APICreateDiffTodoTask = createAsyncThunk(
             );
 
             createTasksPayload.ids.forEach((payloadId, i) => {
-              let task = filterToGetTaskBody(
-                getModelState,
-                payloadId.taskId,
-                payloadId.todoId,
-                false,
+              const todos = [...getState().todos.todo];
+              const todoIndex = todos.findIndex(
+                (todo) => todo.todoId === payloadId.todoId,
               );
-              if (task) task = formattedReturnedData[i];
-              updateOrderingState(payloadId, task);
-              dispatch(clearTodoItem({ taskToUpdate: [] }));
+              console.log("the todos aft upd", todos, todoIndex);
+
+              const tasks = [...todos[todoIndex].task];
+              console.log("the tasks v", tasks);
+              const taskIndex = tasks.findIndex(
+                (task) => task.taskId === payloadId.taskId,
+              );
+              tasks[taskIndex] = formattedReturnedData[i];
+
+              todos[todoIndex].task = [...tasks];
+              console.log("the todos aft upd", todos);
+              dispatch(replaceTodos(todos));
+              updateOrderingState(payloadId, formattedReturnedData[i]);
+              dispatch(clearTodoItem({ taskToCreate: [] }));
               setReqState();
               handleSetSyncState("remove");
             });
           },
           onError: () => {
             handleSetSyncState("remove");
+            const diff = getState().diff;
+            persistDiff(diff);
           },
         },
       );
@@ -380,11 +412,15 @@ export const APIDeleteDiffTodoTask = createAsyncThunk(
           onSuccess: (data) => {
             dispatch(clearTodoItem({ taskToDelete: [] }));
             setReqState();
+            const diff = getState().diff;
+            persistDiff(diff);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
           onError: () => {
             handleSetSyncState("remove");
+            const diff = getState().diff;
+            persistDiff(diff);
           },
         },
       );
@@ -420,11 +456,15 @@ export const APIUpdateDiffTodoTask = createAsyncThunk(
             //clear the data from the diff
             dispatch(clearTodoItem({ taskToUpdate: [] }));
             setReqState();
+            const diff = getState().diff;
+            persistDiff(diff);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
           onError: () => {
             handleSetSyncState("remove");
+            const diff = getState().diff;
+            persistDiff(diff);
           },
         },
       );
@@ -458,12 +498,16 @@ export const APIUpdateDiffTodoTaskIndex = createAsyncThunk(
           onSuccess: (data) => {
             //clear the data from the diff
             dispatch(clearTodoItem({ taskOrdering: [] }));
-            setReqState();
+            setReqState(type);
+            const diff = getState().diff;
+            persistDiff(diff);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
           onError: () => {
             handleSetSyncState("remove");
+            const diff = getState().diff;
+            persistDiff(diff);
           },
         },
       );

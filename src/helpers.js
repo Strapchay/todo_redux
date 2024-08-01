@@ -86,10 +86,13 @@ export function filterToGetTaskBody(getModel, taskId, todoId, clone = true) {
   );
   if (!clone) return modelTodos[todoModelIndex].task[taskIndex];
 
-  const taskBody = JSON.parse(
-    JSON.stringify(modelTodos[todoModelIndex].task[taskIndex]),
-  );
-  return taskBody;
+  const task = modelTodos[todoModelIndex]?.task[taskIndex];
+
+  if (task) {
+    const taskBody = JSON.parse(JSON.stringify(task));
+    return taskBody;
+  }
+  return task;
 }
 
 export async function makeAPIRequest(

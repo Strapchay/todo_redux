@@ -39,9 +39,10 @@ class SyncLocalStorageToAPI {
 
   handleStartSync() {
     this._filterProperties();
-
+    console.log("the pending payload val", this._diffState);
     this._createPropertiesPayload();
-
+    console.log("the create pending payload val", this._toCreatePendingState);
+    console.log("the payload val", this._toCreatePayloadState);
     this._makePropertiesRequest();
 
     this._completeSync();
@@ -237,14 +238,23 @@ class SyncLocalStorageToAPI {
     }
 
     function updatePendingTaskOrdering(payload, task) {
-      const pendingTaskOrdering = this._diffState.pendingTaskOrdering;
-      if (pendingTaskOrdering.length > 0) {
+      console.log("the task id value", task.taskId);
+      const pendingTaskOrdering = [...this._diffState.pendingTaskOrdering];
+      if (pendingTaskOrdering?.length > 0) {
         const taskOrderingIdUpdateIfCreatedByFallback =
-          pendingTaskOrdering.find(
+          pendingTaskOrdering.findIndex(
             (taskOrder) => taskOrder.id === payload.taskId,
           );
-        if (taskOrderingIdUpdateIfCreatedByFallback)
-          taskOrderingIdUpdateIfCreatedByFallback.id = task.taskId;
+        if (taskOrderingIdUpdateIfCreatedByFallback > -1) {
+          console.log("the pending task ordering v", pendingTaskOrdering);
+          pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback] = {
+            ...pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback],
+            id: task.taskId,
+          };
+          this._diffState.pendingTaskOrdering = [...pendingTaskOrdering];
+          console.log("the pending task ordering after", pendingTaskOrdering);
+        }
+        // taskOrderingIdUpdateIfCreatedByFallback.id = task.taskId;
       }
     }
 
@@ -273,7 +283,7 @@ class SyncLocalStorageToAPI {
     const tasksToDeleteLength = pendingTasksToDelete?.length;
     if (tasksToDeleteLength > 0) {
       this._request(
-        { pendingTasksToDelete, setReqState: setPendingDeletesNull },
+        { pendingTasksToDelete, setReqState: setPendingDeletesNull.bind(this) },
         "APIDeleteDiffTodoTask",
       );
     }
@@ -304,7 +314,11 @@ class SyncLocalStorageToAPI {
 
     if (orderingPayload?.length > 1) {
       this._request(
-        { orderingPayload, type, setReqState: setPendingOrderingsNull },
+        {
+          orderingPayload,
+          type,
+          setReqState: setPendingOrderingsNull.bind(this),
+        },
         type === "todo"
           ? "APIUpdateDiffTodoIndex"
           : "APIUpdateDiffTodoTaskIndex",
@@ -422,14 +436,15 @@ class SyncLocalStorageToAPI {
     )
       todoToUpdateFilteredArray.forEach((todo) => {
         const todoToUpdateExistsInTodoToCreate = todoToCreateFilteredArray.some(
-          (pendingTodo) => pendingTodo.todoId === todo.todoId,
+          (todoId) => todoId === todo.todoId,
         );
 
-        if (!todoToUpdateExistsInTodoToCreate)
+        if (!todoToUpdateExistsInTodoToCreate) {
           todoToUpdatePayloadArray.payload.push(
             formatAPIRequestBody(todo, "todo", "update"),
           );
-        todoToUpdatePayloadArray.ids.push(todo.todoId);
+          todoToUpdatePayloadArray.ids.push(todo.todoId);
+        }
       });
     else {
       console.log("triggered the else block");

@@ -343,9 +343,9 @@ function TodoListItem({
                 checked={task.completed || false}
                 onChange={(e) => {
                   e.stopPropagation();
-                  dispatch(
-                    updateTaskForTodo({ ...task, completed: e.target.checked }),
-                  );
+                  const payload = { ...task, completed: e.target.checked };
+                  dispatch(updateTaskForTodo(payload));
+                  dispatch(APIUpdateTodoTask({ token, task: payload }));
                 }}
               />
               <label htmlFor="td-complete">

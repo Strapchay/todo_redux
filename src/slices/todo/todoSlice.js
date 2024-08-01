@@ -36,6 +36,9 @@ const todoSlice = createSlice({
       // state = { ...modState };
       return { ...action.payload };
     },
+    replaceTodos(state, action) {
+      state.todo = [...action.payload];
+    },
     createTodo: {
       prepare(payload) {
         return {
@@ -215,6 +218,7 @@ export const {
   createTodo,
   updateTodo,
   deleteTodo,
+  replaceTodos,
   completeOrUncompleteTodo,
   createTaskForTodo,
   updateTaskForTodo,
@@ -332,7 +336,7 @@ export const APIDeleteTodo = createAsyncThunk(
   "todo/APIDeleteTodo",
   async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TODO.DELETE(todoId) + "dfasdff/",
+      API.APIEnum.TODO.DELETE(todoId),
       null,
       "deleteTodo",
       token.token,
@@ -397,7 +401,7 @@ export const APICreateTodoTask = createAsyncThunk(
   "todo/APICreateTodoTask",
   async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.CREATE,
+      API.APIEnum.TASK.CREATE + "dvasf/",
       { task: "", todo_id: todoId, completed: false },
       "createTask",
       token.token,
@@ -439,7 +443,7 @@ export const APIUpdateTodoTask = createAsyncThunk(
   "todo/APIUpdateTodoTask",
   async ({ token, task }, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.PATCH(task.taskId),
+      API.APIEnum.TASK.PATCH(82938938393),
       { ...task },
       "updateTodo",
       token.token,
@@ -480,7 +484,7 @@ export const APIDeleteTodoTask = createAsyncThunk(
     { dispatch, getState, rejectWithValue },
   ) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.DELETE(taskId),
+      API.APIEnum.TASK.DELETE(3989283293),
       null,
       "deleteTask",
       token.token,
