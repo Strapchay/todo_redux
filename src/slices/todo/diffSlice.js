@@ -12,6 +12,7 @@ import {
   getOrderingUrlFromType,
   makeAPIRequest,
   persistDiff,
+  updatePendingTaskOrdering,
 } from "../../helpers";
 import { API } from "../../api";
 
@@ -79,7 +80,7 @@ const diffSlice = createSlice({
         (task) => task.taskId === action.payload.taskId,
       );
 
-      if (taskExists > 0)
+      if (taskExists > -1)
         state.taskToUpdate[taskExists] = {
           ...state.taskToUpdate[taskExists],
           ...action.payload,
@@ -324,8 +325,8 @@ export const APICreateDiffTodoTask = createAsyncThunk(
     {
       token,
       createTasksPayload,
-      updateOrderingState,
       setReqState,
+      comp,
       getModelState,
       handleSetSyncState,
     },
@@ -346,7 +347,7 @@ export const APICreateDiffTodoTask = createAsyncThunk(
         token.token,
         "POST",
         {
-          onSuccess: (data) => {
+          onSuccess: async (data) => {
             //TODO: imp differ
             const formattedReturnedData = formatBatchCreatedReturnData(
               data,
@@ -367,12 +368,18 @@ export const APICreateDiffTodoTask = createAsyncThunk(
               );
               tasks[taskIndex] = formattedReturnedData[i];
 
+              todos[todoIndex] = { ...todos[todoIndex] };
               todos[todoIndex].task = [...tasks];
               console.log("the todos aft upd", todos);
               dispatch(replaceTodos(todos));
-              updateOrderingState(payloadId, formattedReturnedData[i]);
               dispatch(clearTodoItem({ taskToCreate: [] }));
               setReqState();
+              updatePendingTaskOrdering(
+                payloadId,
+                formattedReturnedData[i],
+                comp._diffState,
+              );
+              // updateOrderingState(payloadId, formattedReturnedData[i]);
               handleSetSyncState("remove");
             });
           },

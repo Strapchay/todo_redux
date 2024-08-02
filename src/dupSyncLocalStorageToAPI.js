@@ -138,57 +138,57 @@ class SyncLocalStorageToAPI {
     );
   }
 
-  _makePropertiesRequest() {
+  async _makePropertiesRequest() {
     //create batch todoToCreate
-    this._makeTodoCreateRequest(
+    await this._makeTodoCreateRequest(
       this._toCreatePayloadState.createTodoPayload,
       this._diffState.pendingTodos,
     );
 
     //create batch todoToDelete
-    this._makeTodoDeleteRequest(this._diffState.pendingTodosToDelete);
+    await this._makeTodoDeleteRequest(this._diffState.pendingTodosToDelete);
 
     //create batch todoUpdate
-    this._makeTodoUpdateRequest(
+    await this._makeTodoUpdateRequest(
       this._toCreatePayloadState.createTodoToUpdatePayload,
       this._diffState.pendingTodoToUpdate,
     );
     // //create batch taskToCreate
-    this._makeTaskToCreateRequest(
+    await this._makeTaskToCreateRequest(
       this._toCreatePayloadState.createTaskPayload,
       this._diffState.pendingTasks,
     );
 
     //create batch taskToDelete
-    this._makeTaskToDeleteRequest(this._diffState.pendingTasksToDelete);
+    await this._makeTaskToDeleteRequest(this._diffState.pendingTasksToDelete);
 
     //create batch taskToUpdate
-    this._makeTaskToUpdateRequest(
+    await this._makeTaskToUpdateRequest(
       this._toCreatePayloadState.createTaskToUpdatePayload,
       this._diffState.pendingTaskToUpdate,
     );
 
     //update ordering todo
-    this._makeOrderingUpdateRequest(
+    await this._makeOrderingUpdateRequest(
       this._diffState.pendingTodoOrdering,
       "todo",
     );
 
     // //update ordering task
-    this._makeOrderingUpdateRequest(
+    await this._makeOrderingUpdateRequest(
       this._diffState.pendingTaskOrdering,
       "task",
     );
   }
 
-  _makeTodoCreateRequest(createTodoPayload, pendingTodos) {
+  async _makeTodoCreateRequest(createTodoPayload, pendingTodos) {
     function setPendingCreatesToNull() {
       this._diffState.pendingTodos = [];
     }
     //create batch todoToCreate
     if (createTodoPayload.payload.length > 0) {
       const pendingState = this._diffState;
-      this._request(
+      await this._request(
         {
           createTodoPayload,
           pendingState,
@@ -199,14 +199,14 @@ class SyncLocalStorageToAPI {
     }
   }
 
-  _makeTodoDeleteRequest(pendingTodosToDelete) {
+  async _makeTodoDeleteRequest(pendingTodosToDelete) {
     //create batch todoToDelete
     function setPendingDeletesToNull() {
       this._diffState.pendingTodosToDelete = [];
     }
 
     if (pendingTodosToDelete.length > 0)
-      this._request(
+      await this._request(
         {
           pendingTodosToDelete,
           setReqState: setPendingDeletesToNull.bind(this),
@@ -215,14 +215,14 @@ class SyncLocalStorageToAPI {
       );
   }
 
-  _makeTodoUpdateRequest(createTodoToUpdatePayload, pendingTodoToUpdate) {
+  async _makeTodoUpdateRequest(createTodoToUpdatePayload, pendingTodoToUpdate) {
     function setPendingUpdatesToNull() {
       this._diffState.pendingTodoToUpdate = [];
     }
     //create batch todoUpdate
     const todosToUpdateLength = createTodoToUpdatePayload?.payload?.length;
     if (todosToUpdateLength > 0) {
-      this._request(
+      await this._request(
         {
           createTodoToUpdatePayload,
           setReqState: setPendingUpdatesToNull.bind(this),
@@ -232,41 +232,20 @@ class SyncLocalStorageToAPI {
     }
   }
 
-  _makeTaskToCreateRequest(createTasksPayload, pendingTasks) {
+  async _makeTaskToCreateRequest(createTasksPayload, pendingTasks) {
     function setPendingCreatesToNull() {
       this._diffState.pendingTasks = [];
-    }
-
-    function updatePendingTaskOrdering(payload, task) {
-      console.log("the task id value", task.taskId);
-      const pendingTaskOrdering = [...this._diffState.pendingTaskOrdering];
-      if (pendingTaskOrdering?.length > 0) {
-        const taskOrderingIdUpdateIfCreatedByFallback =
-          pendingTaskOrdering.findIndex(
-            (taskOrder) => taskOrder.id === payload.taskId,
-          );
-        if (taskOrderingIdUpdateIfCreatedByFallback > -1) {
-          console.log("the pending task ordering v", pendingTaskOrdering);
-          pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback] = {
-            ...pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback],
-            id: task.taskId,
-          };
-          this._diffState.pendingTaskOrdering = [...pendingTaskOrdering];
-          console.log("the pending task ordering after", pendingTaskOrdering);
-        }
-        // taskOrderingIdUpdateIfCreatedByFallback.id = task.taskId;
-      }
     }
 
     //create batch taskToCreate
     const tasksToCreateLength = createTasksPayload?.payload?.length;
     if (tasksToCreateLength > 0) {
-      console.log("got througher here");
-      this._request(
+      await this._request(
         {
           createTasksPayload,
-          updateOrderingState: updatePendingTaskOrdering.bind(this),
           setReqState: setPendingCreatesToNull.bind(this),
+          // diffState: this._diffState,
+          comp: this,
           getModelState: this._getModelState.bind(this),
         },
         "APICreateDiffTodoTask",
@@ -274,7 +253,7 @@ class SyncLocalStorageToAPI {
     }
   }
 
-  _makeTaskToDeleteRequest(pendingTasksToDelete) {
+  async _makeTaskToDeleteRequest(pendingTasksToDelete) {
     function setPendingDeletesNull() {
       this._diffState.pendingTasksToDelete = [];
     }
@@ -282,21 +261,24 @@ class SyncLocalStorageToAPI {
     //create batch taskToDelete
     const tasksToDeleteLength = pendingTasksToDelete?.length;
     if (tasksToDeleteLength > 0) {
-      this._request(
+      await this._request(
         { pendingTasksToDelete, setReqState: setPendingDeletesNull.bind(this) },
         "APIDeleteDiffTodoTask",
       );
     }
   }
 
-  _makeTaskToUpdateRequest(createTaskToUpdatePayload, pendingTaskToUpdate) {
+  async _makeTaskToUpdateRequest(
+    createTaskToUpdatePayload,
+    pendingTaskToUpdate,
+  ) {
     function setPendingUpdatesNull() {
       this._diffState.taskToUpdate = [];
     }
     //create batch taskToUpdate
     const taskToUpdateLength = createTaskToUpdatePayload?.payload?.length;
     if (taskToUpdateLength > 0) {
-      this._request(
+      await this._request(
         {
           createTaskToUpdatePayload,
           setReqState: setPendingUpdatesNull.bind(this),
@@ -306,14 +288,14 @@ class SyncLocalStorageToAPI {
     }
   }
 
-  _makeOrderingUpdateRequest(orderingPayload, type) {
+  async _makeOrderingUpdateRequest(orderingPayload, type) {
     function setPendingOrderingsNull(type) {
       if (type === "todo") this._diffState.todoOrdering = [];
       if (type === "task") this._diffState.taskOrdering = [];
     }
 
     if (orderingPayload?.length > 1) {
-      this._request(
+      await this._request(
         {
           orderingPayload,
           type,

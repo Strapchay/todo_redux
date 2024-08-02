@@ -39,26 +39,27 @@ export function useSyncLocalStorageToAPI(token, localState) {
   const diffRef = useRef(null);
 
   const makeDispatch = useCallback(
-    (payload, type) => {
+    async (payload, type) => {
       const dict = { token, ...payload, handleSetSyncState };
       if (type === "APICreateDiffTodo") {
         console.log("the syncState val", setSyncState, payload);
-        dispatch(APICreateDiffTodo(dict));
+        return dispatch(APICreateDiffTodo(dict));
       }
       if (type === "APIDeleteDiffTodo") {
-        dispatch(APIDeleteDiffTodo(dict));
+        return dispatch(APIDeleteDiffTodo(dict));
       }
-      if (type === "APIUpdateDiffTodo") dispatch(APIUpdateDiffTodo(dict));
+      if (type === "APIUpdateDiffTodo")
+        return dispatch(APIUpdateDiffTodo(dict));
       if (type === "APICreateDiffTodoTask")
-        dispatch(APICreateDiffTodoTask(dict));
+        return dispatch(APICreateDiffTodoTask(dict));
       if (type === "APIDeleteDiffTodoTask")
-        dispatch(APIDeleteDiffTodoTask(dict));
+        return dispatch(APIDeleteDiffTodoTask(dict));
       if (type === "APIUpdateDiffTodoTask")
-        dispatch(APIUpdateDiffTodoTask(dict));
+        return dispatch(APIUpdateDiffTodoTask(dict));
       if (type === "APIUpdateDiffTodoIndex")
-        dispatch(APIUpdateDiffTodoIndex(dict));
+        return dispatch(APIUpdateDiffTodoIndex(dict));
       if (type === "APIUpdateDiffTodoTaskIndex")
-        dispatch(APIUpdateDiffTodoTaskIndex(dict));
+        return dispatch(APIUpdateDiffTodoTaskIndex(dict));
     },
     [dispatch, token],
   );

@@ -401,7 +401,7 @@ export const APICreateTodoTask = createAsyncThunk(
   "todo/APICreateTodoTask",
   async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.CREATE + "dvasf/",
+      API.APIEnum.TASK.CREATE,
       { task: "", todo_id: todoId, completed: false },
       "createTask",
       token.token,

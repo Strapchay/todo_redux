@@ -95,6 +95,27 @@ export function filterToGetTaskBody(getModel, taskId, todoId, clone = true) {
   return task;
 }
 
+export async function updatePendingTaskOrdering(payload, task, state) {
+  console.log("the task id value", task.taskId);
+  const pendingTaskOrdering = [...state.pendingTaskOrdering];
+  if (pendingTaskOrdering?.length > 0) {
+    const taskOrderingIdUpdateIfCreatedByFallback =
+      pendingTaskOrdering.findIndex(
+        (taskOrder) => taskOrder.id === payload.taskId,
+      );
+    if (taskOrderingIdUpdateIfCreatedByFallback > -1) {
+      console.log("the pending task ordering v", pendingTaskOrdering);
+      pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback] = {
+        ...pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback],
+        id: task.taskId,
+      };
+      state.pendingTaskOrdering = [...pendingTaskOrdering];
+      console.log("the pending task ordering after", pendingTaskOrdering);
+    }
+    // taskOrderingIdUpdateIfCreatedByFallback.id = task.taskId;
+  }
+}
+
 export async function makeAPIRequest(
   url,
   payload = null,
