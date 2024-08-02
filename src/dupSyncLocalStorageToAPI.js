@@ -15,6 +15,7 @@ class SyncLocalStorageToAPI {
   _getModelState;
   _request;
   _completeSync;
+  _syncState = 0;
 
   constructor(diffState, getModelState, dispatcher, completeSync) {
     this._diffState = diffState;
@@ -35,6 +36,12 @@ class SyncLocalStorageToAPI {
       createTodoToUpdatePayload: { payload: [], ids: [] },
       createTaskToUpdatePayload: { payload: [], ids: [] },
     };
+  }
+
+  _handleSetSyncState(type) {
+    console.log("the sync state handle set sync", this._syncState);
+    if (type === "add") this._syncState += 1;
+    if (type === "remove") this._syncState -= 1;
   }
 
   handleStartSync() {
@@ -190,6 +197,7 @@ class SyncLocalStorageToAPI {
           createTodoPayload,
           pendingState,
           setReqState: setPendingCreatesToNull.bind(this),
+          handleSetSyncState: this._handleSetSyncState.bind(this),
         },
         "APICreateDiffTodo",
       );
@@ -208,6 +216,7 @@ class SyncLocalStorageToAPI {
         {
           pendingTodosToDelete,
           setReqState: setPendingDeletesToNull.bind(this),
+          handleSetSyncState: this._handleSetSyncState.bind(this),
         },
         "APIDeleteDiffTodo",
       );
@@ -226,6 +235,7 @@ class SyncLocalStorageToAPI {
         {
           createTodoToUpdatePayload,
           setReqState: setPendingUpdatesToNull.bind(this),
+          handleSetSyncState: this._handleSetSyncState.bind(this),
         },
         "APIUpdateDiffTodo",
       );
@@ -248,6 +258,7 @@ class SyncLocalStorageToAPI {
           // diffState: this._diffState,
           comp: this,
           getModelState: this._getModelState.bind(this),
+          handleSetSyncState: this._handleSetSyncState.bind(this),
         },
         "APICreateDiffTodoTask",
       );
@@ -264,7 +275,11 @@ class SyncLocalStorageToAPI {
     const tasksToDeleteLength = pendingTasksToDelete?.length;
     if (tasksToDeleteLength > 0) {
       await this._request(
-        { pendingTasksToDelete, setReqState: setPendingDeletesNull.bind(this) },
+        {
+          pendingTasksToDelete,
+          setReqState: setPendingDeletesNull.bind(this),
+          handleSetSyncState: this._handleSetSyncState.bind(this),
+        },
         "APIDeleteDiffTodoTask",
       );
       await this._completeSync();
@@ -285,6 +300,7 @@ class SyncLocalStorageToAPI {
         {
           createTaskToUpdatePayload,
           setReqState: setPendingUpdatesNull.bind(this),
+          handleSetSyncState: this._handleSetSyncState.bind(this),
         },
         "APIUpdateDiffTodoTask",
       );
@@ -304,6 +320,7 @@ class SyncLocalStorageToAPI {
           orderingPayload,
           type,
           setReqState: setPendingOrderingsNull.bind(this),
+          handleSetSyncState: this._handleSetSyncState.bind(this),
         },
         type === "todo"
           ? "APIUpdateDiffTodoIndex"
