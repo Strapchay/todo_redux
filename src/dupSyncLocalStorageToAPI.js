@@ -45,11 +45,8 @@ class SyncLocalStorageToAPI {
     console.log("the payload val", this._toCreatePayloadState);
     this._makePropertiesRequest();
 
+    //try to complete sync if no data is to be synced after request
     this._completeSync();
-
-    // //try to complete sync if no data is to be synced after request
-    // this._completeSyncAndLoadData();
-    // console.log(this._syncState);
   }
 
   _filterProperties() {
@@ -196,6 +193,7 @@ class SyncLocalStorageToAPI {
         },
         "APICreateDiffTodo",
       );
+      await this._completeSync();
     }
   }
 
@@ -205,7 +203,7 @@ class SyncLocalStorageToAPI {
       this._diffState.pendingTodosToDelete = [];
     }
 
-    if (pendingTodosToDelete.length > 0)
+    if (pendingTodosToDelete.length > 0) {
       await this._request(
         {
           pendingTodosToDelete,
@@ -213,6 +211,8 @@ class SyncLocalStorageToAPI {
         },
         "APIDeleteDiffTodo",
       );
+      await this._completeSync();
+    }
   }
 
   async _makeTodoUpdateRequest(createTodoToUpdatePayload, pendingTodoToUpdate) {
@@ -229,6 +229,7 @@ class SyncLocalStorageToAPI {
         },
         "APIUpdateDiffTodo",
       );
+      await this._completeSync();
     }
   }
 
@@ -250,6 +251,7 @@ class SyncLocalStorageToAPI {
         },
         "APICreateDiffTodoTask",
       );
+      await this._completeSync();
     }
   }
 
@@ -265,6 +267,7 @@ class SyncLocalStorageToAPI {
         { pendingTasksToDelete, setReqState: setPendingDeletesNull.bind(this) },
         "APIDeleteDiffTodoTask",
       );
+      await this._completeSync();
     }
   }
 
@@ -285,6 +288,7 @@ class SyncLocalStorageToAPI {
         },
         "APIUpdateDiffTodoTask",
       );
+      await this._completeSync();
     }
   }
 
@@ -305,6 +309,7 @@ class SyncLocalStorageToAPI {
           ? "APIUpdateDiffTodoIndex"
           : "APIUpdateDiffTodoTaskIndex",
       );
+      await this._completeSync();
     }
   }
 

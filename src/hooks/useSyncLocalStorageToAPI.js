@@ -42,7 +42,6 @@ export function useSyncLocalStorageToAPI(token, localState) {
     async (payload, type) => {
       const dict = { token, ...payload, handleSetSyncState };
       if (type === "APICreateDiffTodo") {
-        console.log("the syncState val", setSyncState, payload);
         return dispatch(APICreateDiffTodo(dict));
       }
       if (type === "APIDeleteDiffTodo") {
@@ -91,7 +90,8 @@ export function useSyncLocalStorageToAPI(token, localState) {
     }
   }, [dispatch]);
 
-  const completeSyncAndLoadData = useCallback(() => {
+  const completeSyncAndLoadData = useCallback(async () => {
+    console.log("the sync state val", syncState);
     if (syncState <= 0) {
       setSyncState(0);
       syncLoadingRef.current = false;
