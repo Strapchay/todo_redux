@@ -44,6 +44,8 @@ import Modal from "../Modal";
 import { AppContext } from "../ProtectedRoute";
 import { FixedSizeGrid as Grid } from "react-window";
 import { TODO_LIST_GAP } from "../constants";
+import UpdateInfoForm from "./forms/UpdateInfoForm";
+import UpdatePwdForm from "./forms/UpdatePwdForm";
 
 function Todo() {
   useEffect(() => {
@@ -185,6 +187,22 @@ function SortableTaskInput({ tasks, activeDict, handleSyncActive }) {
         ) : null}
       </DragOverlay>
     </DndContext>
+  );
+}
+
+function UpdateInfoComponent({ isActive }) {
+  const [formType, setFormType] = useState("update-info");
+
+  return (
+    <div className={styles["td-update-info"]}>
+      <div className={styles["info-update-heading"]}>
+        <h2>Update Your Info</h2>
+      </div>
+      <div className={styles["info-update-content"]}>
+        {formType === "update-info" && <UpdateInfoForm />}
+        {formType === "update-pwd" && <UpdatePwdForm />}
+      </div>
+    </div>
   );
 }
 
@@ -501,6 +519,7 @@ function TodoListRender({
 function TodoRenderer() {
   const [initFormRendered, setInitFormRendered] = useState(false);
   const [syncUIActive, setSyncUIActive] = useState(false);
+  const [updaterActive, setUpdaterActive] = useState(false);
   const { syncLoading, setSyncLoading, sync, setSync } = useContext(AppContext);
 
   useEffect(() => {
@@ -525,6 +544,12 @@ function TodoRenderer() {
             Back
           </p>
           <p className={styles["navbar-header-title"]}>TD App</p>
+          <button
+            onClick={() => setUpdaterActive((v) => !v)}
+            className={styles["btn-update"]}
+          >
+            Update Info
+          </button>
         </nav>
       </header>
 
@@ -546,16 +571,17 @@ function TodoRenderer() {
             initFormRendered={initFormRendered}
             handleSyncActive={handleSyncActive}
           />
+          <UpdateInfoComponent isActive={updaterActive} />
+          {syncLoading && (
+            <Modal>
+              <Modal.Open opens="sync-loader" click={false}></Modal.Open>
+              <Modal.Window name="sync-loader">
+                <div></div>
+              </Modal.Window>
+            </Modal>
+          )}
         </div>
       </div>
-      {syncLoading && (
-        <Modal>
-          <Modal.Open opens="sync-loader" click={false}></Modal.Open>
-          <Modal.Window name="sync-loader">
-            <div></div>
-          </Modal.Window>
-        </Modal>
-      )}
     </div>
   );
 }
