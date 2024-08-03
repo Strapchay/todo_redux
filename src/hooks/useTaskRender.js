@@ -11,8 +11,8 @@ import {
 } from "../slices/todo/todoSlice";
 import { AppContext } from "../ProtectedRoute";
 
-export function useTaskRender() {
-  const { token } = useContext(AppContext);
+export function useTaskRender(handleSyncActive) {
+  const { token, removeToken } = useContext(AppContext);
   const [title, setTitle] = useState("");
 
   const [incompleteActiveDict, setIncompleteActiveDict] = useState(null);
@@ -35,13 +35,26 @@ export function useTaskRender() {
     else {
       dispatch(updateTodo({ ...currentTodo, title }));
       dispatch(
-        APIUpdateTodoTitle({ token, title, todoId: currentTodo.todoId }),
+        APIUpdateTodoTitle({
+          token,
+          title,
+          todoId: currentTodo.todoId,
+          removeToken,
+          handleSyncActive,
+        }),
       );
     }
   }
 
   function handleAddTask() {
-    dispatch(APICreateTodoTask({ token, todoId: currentTodo.todoId }));
+    dispatch(
+      APICreateTodoTask({
+        token,
+        todoId: currentTodo.todoId,
+        removeToken,
+        handleSyncActive,
+      }),
+    );
   }
 
   function handleDragStart(event) {
@@ -71,7 +84,9 @@ export function useTaskRender() {
 
     if (active.id !== over.id) {
       dispatch(replaceTaskIndexForTodo({ from: active.id, to: over.id }));
-      dispatch(APIUpdateTodoTaskIndex(token));
+      dispatch(
+        APIUpdateTodoTaskIndex({ token, removeToken, handleSyncActive }),
+      );
     }
     const isIncompletedTaskType = incompletedTasksIdList.includes(active.id)
       ? true

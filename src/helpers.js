@@ -1,24 +1,6 @@
 import { API } from "./api";
 import { ALERT_STATUS_ERRORS, BASE_API_URL, successCodes } from "./constants";
 
-// function getRequestResponse(res, query, resStatus) {
-//   //set the resStatus on the queryObj
-//   if (resStatus) queryObj.resStatus = resStatus
-
-//   if (response.non_field_errors)
-//     return HTTP_400_RESPONSE_LOGIN_USER
-
-//   if (response instanceof Array) return response[0]
-
-//   const formError = Object.getOwnPropertyNames(response)
-//   const formErrorsLength = Object.getOwnPropertyNames(response).length
-
-//   if (formErrorsLength > 0) return (() => {
-//     if (queryObj.callBack) queryObj.callBack(response);
-//     return formErrorsLength >= 1 ? API.destructureError(response[formError[0]], formError[0]) : queryObj.actionType === "create" ? HTTP_400_RESPONSE_CREATE_USER : API.destructureError(response[formError[0]], formError[0])
-//   })()
-// }
-//
 export function persistTodo(state) {
   localStorage.setItem("todos", JSON.stringify(state));
 }
@@ -122,6 +104,7 @@ export async function makeAPIRequest(
   action = null,
   token = null,
   method = "GET",
+  removeToken,
   extraActions = null,
 ) {
   try {
@@ -142,6 +125,8 @@ export async function makeAPIRequest(
     const data =
       method !== "DELETE" ? await res.json() : await getDeleteRes(res, action);
     if (!res.ok || !successCodes.includes(res.status)) {
+      console.log("the res stat", res.status);
+      if (res.status === 401) removeToken?.();
       throw new Error(getInitError(data));
     }
     if (extraActions) extraActions.onSuccess(data);

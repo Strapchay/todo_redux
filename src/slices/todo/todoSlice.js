@@ -235,13 +235,17 @@ export const selectCurrentTodo = (state) => state.todos.currentTodo;
 
 export const APICreateTodo = createAsyncThunk(
   "todo/APICreateTodo",
-  async (token, { dispatch, getState, rejectWithValue }) => {
+  async (
+    { token, handleSyncActive, removeToken },
+    { dispatch, getState, rejectWithValue },
+  ) => {
     const res = await makeAPIRequest(
       API.APIEnum.TODO.CREATE,
       { title: "" },
       "createTodo",
       token.token,
       "POST",
+      removeToken,
       {
         onSuccess: (data) => {
           const todoBody = formatAPIResponseBody(data, "todo");
@@ -266,6 +270,7 @@ export const APICreateTodo = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -275,13 +280,17 @@ export const APICreateTodo = createAsyncThunk(
 
 export const APIUpdateTodoTitle = createAsyncThunk(
   "todo/APIUpdateTodoTitle",
-  async ({ token, title, todoId }, { dispatch, getState, rejectWithValue }) => {
+  async (
+    { token, title, todoId, removeToken, handleSyncActive },
+    { dispatch, getState, rejectWithValue },
+  ) => {
     const res = await makeAPIRequest(
       API.APIEnum.TODO.PATCH(todoId),
       { title: title },
       "updateTodo",
       token.token,
       "PATCH",
+      removeToken,
       {
         onSuccess: () => {
           const todos = getState().todos;
@@ -294,6 +303,7 @@ export const APIUpdateTodoTitle = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -304,7 +314,7 @@ export const APIUpdateTodoTitle = createAsyncThunk(
 export const APIUpdateTodoComplete = createAsyncThunk(
   "todo/APIUpdateTodoComplete",
   async (
-    { token, completed, todoId },
+    { token, completed, todoId, removeToken, handleSyncActive },
     { dispatch, getState, rejectWithValue },
   ) => {
     const res = await makeAPIRequest(
@@ -313,6 +323,7 @@ export const APIUpdateTodoComplete = createAsyncThunk(
       "updateTodo",
       token.token,
       "PATCH",
+      removeToken,
       {
         onSuccess: () => {
           const todos = getState().todos;
@@ -325,6 +336,7 @@ export const APIUpdateTodoComplete = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -334,13 +346,17 @@ export const APIUpdateTodoComplete = createAsyncThunk(
 
 export const APIDeleteTodo = createAsyncThunk(
   "todo/APIDeleteTodo",
-  async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
+  async (
+    { token, todoId, removeToken, handleSyncActive },
+    { dispatch, getState, rejectWithValue },
+  ) => {
     const res = await makeAPIRequest(
       API.APIEnum.TODO.DELETE(todoId),
       null,
       "deleteTodo",
       token.token,
       "DELETE",
+      removeToken,
       {
         onSuccess: (_) => {
           const todos = getState().todos;
@@ -355,6 +371,7 @@ export const APIDeleteTodo = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -364,7 +381,10 @@ export const APIDeleteTodo = createAsyncThunk(
 
 export const APIUpdateTodoIndex = createAsyncThunk(
   "todo/APIUpdateTodoIndex",
-  async (token, { dispatch, getState, rejectWithValue }) => {
+  async (
+    { token, removeToken, handleSyncActive },
+    { dispatch, getState, rejectWithValue },
+  ) => {
     const todos = getState().todos.todo;
     const listItems = [];
     todos.forEach((todo, i) =>
@@ -379,6 +399,7 @@ export const APIUpdateTodoIndex = createAsyncThunk(
       "updateTodo",
       token.token,
       "PATCH",
+      removeToken,
       {
         onSuccess: () => {
           const todos = getState().todos;
@@ -390,6 +411,7 @@ export const APIUpdateTodoIndex = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -399,13 +421,17 @@ export const APIUpdateTodoIndex = createAsyncThunk(
 
 export const APICreateTodoTask = createAsyncThunk(
   "todo/APICreateTodoTask",
-  async ({ token, todoId }, { dispatch, getState, rejectWithValue }) => {
+  async (
+    { token, todoId, removeToken, handleSyncActive },
+    { dispatch, getState, rejectWithValue },
+  ) => {
     const res = await makeAPIRequest(
       API.APIEnum.TASK.CREATE,
       { task: "", todo_id: todoId, completed: false },
       "createTask",
       token.token,
       "POST",
+      removeToken,
       {
         onSuccess: (data) => {
           const taskBody = formatAPIResponseBody(data, "task");
@@ -432,6 +458,7 @@ export const APICreateTodoTask = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -441,13 +468,17 @@ export const APICreateTodoTask = createAsyncThunk(
 
 export const APIUpdateTodoTask = createAsyncThunk(
   "todo/APIUpdateTodoTask",
-  async ({ token, task }, { dispatch, getState, rejectWithValue }) => {
+  async (
+    { token, task, handleSyncActive, removeToken },
+    { dispatch, getState, rejectWithValue },
+  ) => {
     const res = await makeAPIRequest(
       API.APIEnum.TASK.PATCH(82938938393),
       { ...task },
       "updateTodo",
       token.token,
       "PATCH",
+      removeToken,
       {
         onSuccess: () => {
           const todos = getState().todos;
@@ -470,6 +501,7 @@ export const APIUpdateTodoTask = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -480,7 +512,7 @@ export const APIUpdateTodoTask = createAsyncThunk(
 export const APIDeleteTodoTask = createAsyncThunk(
   "todo/APIDeleteTodoTask",
   async (
-    { token, taskId, todoId },
+    { token, taskId, todoId, removeToken, handleSyncActive },
     { dispatch, getState, rejectWithValue },
   ) => {
     const res = await makeAPIRequest(
@@ -489,6 +521,7 @@ export const APIDeleteTodoTask = createAsyncThunk(
       "deleteTask",
       token.token,
       "DELETE",
+      removeToken,
       {
         onSuccess: (_) => {
           const todos = getState().todos;
@@ -500,6 +533,7 @@ export const APIDeleteTodoTask = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );
@@ -509,7 +543,10 @@ export const APIDeleteTodoTask = createAsyncThunk(
 
 export const APIUpdateTodoTaskIndex = createAsyncThunk(
   "todo/APIUpdateTodoTaskIndex",
-  async (token, { dispatch, getState, rejectWithValue }) => {
+  async (
+    { token, removeToken, handleSyncActive },
+    { dispatch, getState, rejectWithValue },
+  ) => {
     const currentTodoId = getState().todos.currentTodo;
     const currentTodo = getState().todos.todo.find(
       (todo) => todo.todoId === currentTodoId,
@@ -527,6 +564,7 @@ export const APIUpdateTodoTaskIndex = createAsyncThunk(
       "updateTask",
       token.token,
       "PATCH",
+      removeToken,
       {
         onSuccess: () => {
           const todos = getState().todos;
@@ -538,6 +576,7 @@ export const APIUpdateTodoTaskIndex = createAsyncThunk(
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
+          handleSyncActive();
         },
       },
     );

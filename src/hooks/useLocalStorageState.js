@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function useLocalStorageState(initialState, authToken) {
   const [token, setToken] = useState(function () {
@@ -13,20 +13,17 @@ export function useLocalStorageState(initialState, authToken) {
     [token, authToken],
   );
 
-  // function getTodos() {
-  //   const savedTodos = localStorage.getItem("todos");
-  //   if (savedTodos) return JSON.parse(savedTodos);
-  // }
+  function removeToken() {
+    localStorage.removeItem("token");
+  }
 
-  function getLocalStates() {
+  const getLocalStates = useCallback(() => {
     const savedTodos = localStorage.getItem("todos");
     const savedDiff = localStorage.getItem("diff");
     if (savedTodos)
       return { todos: JSON.parse(savedTodos), diff: JSON.parse(savedDiff) };
-  }
+  }, []);
 
-  // function getDiffs() {}
-
-  return { token, setToken, getLocalStates };
+  return { token, setToken, getLocalStates, removeToken };
   // [token, setToken];
 }

@@ -201,7 +201,6 @@ class SyncLocalStorageToAPI {
         },
         "APICreateDiffTodo",
       );
-      await this._completeSync();
     }
   }
 
@@ -220,7 +219,6 @@ class SyncLocalStorageToAPI {
         },
         "APIDeleteDiffTodo",
       );
-      await this._completeSync();
     }
   }
 
@@ -239,7 +237,6 @@ class SyncLocalStorageToAPI {
         },
         "APIUpdateDiffTodo",
       );
-      await this._completeSync();
     }
   }
 
@@ -262,7 +259,6 @@ class SyncLocalStorageToAPI {
         },
         "APICreateDiffTodoTask",
       );
-      await this._completeSync();
     }
   }
 
@@ -282,7 +278,6 @@ class SyncLocalStorageToAPI {
         },
         "APIDeleteDiffTodoTask",
       );
-      await this._completeSync();
     }
   }
 
@@ -304,7 +299,6 @@ class SyncLocalStorageToAPI {
         },
         "APIUpdateDiffTodoTask",
       );
-      await this._completeSync();
     }
   }
 
@@ -326,40 +320,7 @@ class SyncLocalStorageToAPI {
           ? "APIUpdateDiffTodoIndex"
           : "APIUpdateDiffTodoTaskIndex",
       );
-      await this._completeSync();
     }
-  }
-
-  _formatBatchCreatedReturnData(returnData, objType) {
-    let formattedReturnedData = [];
-
-    if (Array.isArray(returnData)) {
-      returnData.forEach((data, i) =>
-        formattedReturnedData.push(formatAPIResponseBody(data, objType)),
-      );
-    }
-    if (!Array.isArray(returnData))
-      formattedReturnedData.push(formatAPIResponseBody(returnData, objType));
-
-    return formattedReturnedData;
-  }
-
-  _updateTodoOrderingBatchCallback(returnData, requestStatus) {
-    if (requestStatus) this._diffState.todoOrdering = [];
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
-  }
-
-  _updateTaskBatchCallBack(payloadIds, returnData, requestStatus) {
-    if (requestStatus) this._diffState.taskToUpdate = [];
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
-  }
-
-  _updateTaskOrderingBatchCallBack(returnData, requestStatus) {
-    if (requestStatus) this._diffState.taskOrdering = [];
-    this._syncState.count -= 1;
-    this._completeSyncAndLoadData();
   }
 
   _filterDeletedObjectsFromObjects(
@@ -451,8 +412,7 @@ class SyncLocalStorageToAPI {
         }
       });
     else {
-      console.log("triggered the else block");
-      // this._diffState.todoToUpdate = [];
+      this._diffState.todoToUpdate = [];
     }
   }
 
@@ -476,7 +436,6 @@ class SyncLocalStorageToAPI {
       });
     }
   }
-  _filterToGetTaskBody(a, b) {}
 
   _createTaskLinkedToAPITodoBody(
     taskToCreateDiffArray,
@@ -510,8 +469,7 @@ class SyncLocalStorageToAPI {
         );
       });
     else {
-      console.log("the diffstate tasktocreate state");
-      // this._diffState.taskToCreate = [];
+      this._diffState.taskToCreate = [];
     }
   }
 
@@ -557,59 +515,6 @@ class SyncLocalStorageToAPI {
       this._diffState.taskToUpdate = [];
     }
   }
-
-  _makeBatchRequest(
-    requestURL,
-    requestPayload,
-    requestDiffArray,
-    requestActionType,
-    requestCallBack,
-    requestType,
-    requestCallBackParam = false,
-  ) {
-    console.log(this);
-    console.log(this._token);
-    const queryObj = {
-      endpoint: requestURL,
-      token: this._token.value,
-      sec: 5,
-      actionType: requestActionType,
-      queryData: requestPayload,
-      callBack: requestCallBack.bind(this),
-      spinner: false,
-      alert: false,
-      type: requestType,
-      callBackParam: requestCallBackParam,
-    };
-    API.queryAPI(queryObj);
-  }
-
-  _wrapper(wrapperName, requestBody) {
-    const wrapper = {};
-    wrapper[wrapperName] = requestBody;
-
-    return wrapper;
-  }
-
-  _batchRequestWrapper(requestBody, requestType) {
-    if (requestType === "batch_update") {
-      return this._wrapper("update_list", requestBody);
-    }
-
-    if (requestType === "batch_update_ordering") {
-      return this._wrapper("ordering_list", requestBody);
-    }
-
-    if (requestType === "batch_create") {
-      return this._wrapper("create_list", requestBody);
-    }
-
-    if (requestType === "batch_delete") {
-      return this._wrapper("delete_list", requestBody);
-    }
-  }
-
-  updateAndGetToken() {}
 
   _returnObjType(objType, obj) {
     if (objType === "todo") return obj.todoId;

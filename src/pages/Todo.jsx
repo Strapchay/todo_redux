@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect } from "react";
+import { useContext, useEffect } from "react";
 import styles from "./Todo.module.css";
 import { useState } from "react";
-import { useRef } from "react";
 import { BiGridVertical } from "react-icons/bi";
 import { BiDotsVertical } from "react-icons/bi";
 import { HiXMark } from "react-icons/hi2";
@@ -14,18 +13,13 @@ import {
   APIUpdateTodoIndex,
   APIUpdateTodoTask,
   completeOrUncompleteTodo,
-  createTaskForTodo,
-  createTodo,
   deleteTaskForTodo,
   deleteTodo,
-  replaceTaskIndexForTodo,
   replaceTodoIndex,
   selectAllTodos,
   selectCurrentTodo,
   setCurrentTodo,
-  setInitialTodoFromLocalStorage,
   updateTaskForTodo,
-  updateTodo,
 } from "../slices/todo/todoSlice";
 
 import {
@@ -46,9 +40,6 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useTaskRender } from "../hooks/useTaskRender";
 import { formatEditDate } from "../../utils";
-import { useLocalStorageState } from "../hooks/useLocalStorageState";
-import { setInitialDiffFromLocalStorage } from "../slices/todo/diffSlice";
-import { useSyncLocalStorageToAPI } from "../hooks/useSyncLocalStorageToAPI";
 import Modal from "../Modal";
 import { AppContext } from "../ProtectedRoute";
 
@@ -66,8 +57,13 @@ function Todo() {
   return <TodoRenderer />;
 }
 
-function TaskAddInput({ id, task = null, todoId = null }) {
-  const { token } = useContext(AppContext);
+function TaskAddInput({
+  id,
+  task = null,
+  todoId = null,
+  handleSyncActive = null,
+}) {
+  const { token, removeToken } = useContext(AppContext);
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const style = {
@@ -82,19 +78,33 @@ function TaskAddInput({ id, task = null, todoId = null }) {
       e.preventDefault();
       const payload = { ...task, task: e.target.textContent.trim() };
       dispatch(updateTaskForTodo(payload));
-      dispatch(APIUpdateTodoTask({ token, task: payload }));
+      dispatch(
+        APIUpdateTodoTask({
+          token,
+          task: payload,
+          handleSyncActive,
+          removeToken,
+        }),
+      );
     }
     if (e.type === "change") {
       const payload = { ...task, completed: e.target.checked };
       dispatch(updateTaskForTodo(payload));
-      dispatch(APIUpdateTodoTask({ token, task: payload }));
+      dispatch(
+        APIUpdateTodoTask({
+          token,
+          task: payload,
+          handleSyncActive,
+          removeToken,
+        }),
+      );
     }
   }
 
   function handleTaskDelete() {
     const payload = { taskId: task.taskId, todoId };
     dispatch(deleteTaskForTodo(payload));
-    dispatch(APIDeleteTodoTask({ ...payload, token }));
+    dispatch(APIDeleteTodoTask({ ...payload, token, removeToken }));
   }
 
   return (
@@ -141,9 +151,9 @@ function TaskAddInput({ id, task = null, todoId = null }) {
   );
 }
 
-function SortableTaskInput({ tasks, activeDict }) {
+function SortableTaskInput({ tasks, activeDict, handleSyncActive }) {
   const { sensors, handleDragEnd, handleDragStart, currentTodo } =
-    useTaskRender();
+    useTaskRender(handleSyncActive);
   return (
     <DndContext
       sensors={sensors}
@@ -158,6 +168,7 @@ function SortableTaskInput({ tasks, activeDict }) {
             key={t?.taskId}
             task={t}
             todoId={currentTodo.todoId}
+            handleSyncActive={handleSyncActive}
           />
         ))}
       </SortableContext>
@@ -167,6 +178,7 @@ function SortableTaskInput({ tasks, activeDict }) {
             id={activeDict.taskId}
             task={activeDict}
             todoId={currentTodo.todoId}
+            handleSyncActive={handleSyncActive}
           />
         ) : null}
       </DragOverlay>
@@ -174,7 +186,7 @@ function SortableTaskInput({ tasks, activeDict }) {
   );
 }
 
-function TaskContentRender({ initFormRendered }) {
+function TaskContentRender({ initFormRendered, handleSyncActive }) {
   const {
     handleTitleUpdate,
     incompletedTasks,
@@ -183,7 +195,7 @@ function TaskContentRender({ initFormRendered }) {
     incompleteActiveDict,
     completeActiveDict,
     currentTodo,
-  } = useTaskRender();
+  } = useTaskRender(handleSyncActive);
 
   return (
     <div
@@ -212,6 +224,7 @@ function TaskContentRender({ initFormRendered }) {
                 <SortableTaskInput
                   tasks={incompletedTasks}
                   activeDict={incompleteActiveDict}
+                  handleSyncActive={handleSyncActive}
                 />
               )}
             </div>
@@ -225,6 +238,7 @@ function TaskContentRender({ initFormRendered }) {
                 <SortableTaskInput
                   tasks={completedTasks}
                   activeDict={completeActiveDict}
+                  handleSyncActive={handleSyncActive}
                 />
               )}
             </div>
@@ -242,9 +256,10 @@ function TodoListItem({
   setInitFormRendered,
   initFormRendered,
   todoTasks,
+  handleSyncActive,
 }) {
   const dispatch = useDispatch();
-  const { token } = useContext(AppContext);
+  const { token, removeToken } = useContext(AppContext);
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const style = {
@@ -286,7 +301,9 @@ function TodoListItem({
                   e.stopPropagation();
                   if (todo?.todoId === currentTodo) setInitFormRendered(false);
                   dispatch(deleteTodo({ todoId: todo?.todoId }));
-                  dispatch(APIDeleteTodo({ token, todoId: todo?.todoId }));
+                  dispatch(
+                    APIDeleteTodo({ token, todoId: todo?.todoId, removeToken }),
+                  );
                 }}
               >
                 Delete
@@ -302,6 +319,7 @@ function TodoListItem({
                       token,
                       completed: !todo?.completed,
                       todoId: todo?.todoId,
+                      removeToken,
                     }),
                   );
                   dispatch(completeOrUncompleteTodo({ todoId: todo?.todoId }));
@@ -345,7 +363,14 @@ function TodoListItem({
                   e.stopPropagation();
                   const payload = { ...task, completed: e.target.checked };
                   dispatch(updateTaskForTodo(payload));
-                  dispatch(APIUpdateTodoTask({ token, task: payload }));
+                  dispatch(
+                    APIUpdateTodoTask({
+                      token,
+                      task: payload,
+                      handleSyncActive,
+                      removeToken,
+                    }),
+                  );
                 }}
               />
               <label htmlFor="td-complete">
@@ -362,8 +387,12 @@ function TodoListItem({
   );
 }
 
-function TodoListRender({ initFormRendered, setInitFormRendered }) {
-  const { token } = useContext(AppContext);
+function TodoListRender({
+  initFormRendered,
+  setInitFormRendered,
+  handleSyncActive,
+}) {
+  const { token, removeToken } = useContext(AppContext);
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTodoDict, setActiveTodoDict] = useState({});
   const [formRendered, setFormRendered] = useState(false);
@@ -373,10 +402,11 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
 
   function handleAddTodoForm() {
     if (!initFormRendered) {
-      dispatch(APICreateTodo(token));
+      dispatch(APICreateTodo({ token, handleSyncActive, removeToken }));
       setInitFormRendered(true);
     }
-    if (initFormRendered) dispatch(APICreateTodo(token));
+    if (initFormRendered)
+      dispatch(APICreateTodo({ token, handleSyncActive, removeToken }));
   }
 
   function handleDragStart(event) {
@@ -389,7 +419,7 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
     const { active, over } = event;
     if (active.id !== over.id) {
       dispatch(replaceTodoIndex({ from: active.id, to: over.id }));
-      dispatch(APIUpdateTodoIndex(token));
+      dispatch(APIUpdateTodoIndex({ token, handleSyncActive, removeToken }));
     }
     setActiveTodoDict({});
   }
@@ -423,6 +453,7 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
                   key={todo.todoId}
                   setInitFormRendered={setInitFormRendered}
                   initFormRendered={initFormRendered}
+                  handleSyncActive={handleSyncActive}
                 />
               ))}
             </SortableContext>
@@ -440,17 +471,21 @@ function TodoListRender({ initFormRendered, setInitFormRendered }) {
 
 function TodoRenderer() {
   const [initFormRendered, setInitFormRendered] = useState(false);
-  const [syncUIActive, setSyncUIActive] = useState(true);
-  const { startSync, syncLoading } = useContext(AppContext);
-  const dispatch = useDispatch();
+  const [syncUIActive, setSyncUIActive] = useState(false);
+  const { syncLoading, setSyncLoading, sync, setSync } = useContext(AppContext);
 
   useEffect(() => {
-    startSync();
-  }, []);
+    console.log("the sync value", sync);
+    if (sync && !syncLoading) {
+      console.log("about starting sync");
+      setSyncLoading(true);
+    }
+  }, [setSyncLoading, sync, syncLoading]);
 
-  // if (diff && diff.diffActive) {
-  //   //TODO: implement sync functionality
-  // }
+  function handleSyncActive() {
+    setSyncUIActive(true);
+  }
+
   return (
     <div className={[styles["container"], styles["todo-active"]].join(" ")}>
       <header>
@@ -469,14 +504,19 @@ function TodoRenderer() {
           <SyncUINotifier
             syncUIActive={syncUIActive}
             setSyncUIActive={setSyncUIActive}
+            setSync={setSync}
           />
         )}
         <div className={styles["td-row"]}>
           <TodoListRender
             initFormRendered={initFormRendered}
             setInitFormRendered={setInitFormRendered}
+            handleSyncActive={handleSyncActive}
           />
-          <TaskContentRender initFormRendered={initFormRendered} />
+          <TaskContentRender
+            initFormRendered={initFormRendered}
+            handleSyncActive={handleSyncActive}
+          />
         </div>
       </div>
       {syncLoading && (
@@ -491,7 +531,13 @@ function TodoRenderer() {
   );
 }
 
-function SyncUINotifier({ syncUIActive, setSyncUIActive }) {
+function SyncUINotifier({ syncUIActive, setSyncUIActive, setSync }) {
+  function handleStartSync() {
+    console.log("starting sync...");
+    setSync(true);
+    setSyncUIActive(false);
+  }
+
   return (
     <div className={styles["sync-alert"]}>
       <div className={styles["sync-msg"]}>
@@ -505,6 +551,7 @@ function SyncUINotifier({ syncUIActive, setSyncUIActive }) {
             styles["btn-sync-now"],
             styles["bd-radius"],
           ].join(" ")}
+          onClick={handleStartSync}
         >
           Sync Now
         </button>

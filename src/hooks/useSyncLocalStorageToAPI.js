@@ -1,5 +1,5 @@
-import { useContext, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import {
   APICreateDiffTodo,
   APICreateDiffTodoTask,
@@ -11,29 +11,18 @@ import {
   APIUpdateDiffTodoTaskIndex,
   deactivateDiff,
   setInitialDiffFromLocalStorage,
-  updateDiffState,
 } from "../slices/todo/diffSlice";
-import {
-  batchRequestWrapper,
-  formatAPIRequestBody,
-  formatBatchCreatedReturnData,
-  persistDiff,
-} from "../helpers";
 import toast from "react-hot-toast";
 import { API } from "../api";
 import { useEffect } from "react";
 import { useCallback } from "react";
 import SyncLocalStorageToAPI from "../dupSyncLocalStorageToAPI";
-import { AppContext } from "../ProtectedRoute";
 import { setInitialTodoFromLocalStorage } from "../slices/todo/todoSlice";
 import store from "../store";
 
-//TODO: instead of using a diffRef.current, load the diff to the diffState and add its active and then sync that data value to be a ble to use it with redux
-export function useSyncLocalStorageToAPI(token, localState) {
+export function useSyncLocalStorageToAPI(token, getLocalState, setSync) {
   const dispatch = useDispatch();
-  const [syncState, setSyncState] = useState(0);
   const [syncLoading, setSyncLoading] = useState(false);
-  const syncLoadingRef = useRef(false);
   const syncRef = useRef(null);
   const toastRef = useRef();
   const diffRef = useRef(null);
@@ -67,9 +56,22 @@ export function useSyncLocalStorageToAPI(token, localState) {
     return store.getState().todos;
   }
 
+  const completeSyncAndLoadData = useCallback(async () => {
+    console.log("the sync state val", syncLoading);
+    if (syncLoading) {
+      setSyncLoading(false);
+      setSync(false);
+      syncRef.current = null;
+      dispatch(deactivateDiff());
+      removeLoader();
+      // setLocalDataAdded(false);}
+    }
+  }, [dispatch, syncLoading, setSync]);
+
   useEffect(() => {
-    if (localState) {
-      const { todos = null, diff = null } = localState;
+    console.log("the get local st", getLocalState);
+    if (getLocalState) {
+      const { todos = null, diff = null } = getLocalState?.() ?? {};
       if (todos) dispatch(setInitialTodoFromLocalStorage(todos));
       if (diff) {
         console.log("diff before diffState", diff);
@@ -86,33 +88,21 @@ export function useSyncLocalStorageToAPI(token, localState) {
           pendingTaskOrdering: diff?.taskOrdering,
         };
         diffRef.current = diffState;
+      } else {
+        completeSyncAndLoadData();
       }
+    } else {
+      console.log("trig else");
+      completeSyncAndLoadData();
     }
-  }, [dispatch]);
-
-  const completeSyncAndLoadData = useCallback(async () => {
-    console.log("the sync state val", syncState);
-    if (syncState <= 0) {
-      setSyncState(0);
-      syncLoadingRef.current = false;
-      syncRef.current = null;
-      dispatch(deactivateDiff());
-      removeLoader();
-      // setLocalDataAdded(false);}
-    }
-  }, [dispatch, syncState]);
-
-  // function handleSetSyncState(type) {
-  //   console.log("the sync state handle set sync", syncState);
-  //   if (type === "add") setSyncState((c) => (c += 1));
-  //   if (type === "remove") setSyncState((c) => (c -= 1));
-  // }
+  }, [dispatch, getLocalState, completeSyncAndLoadData]);
 
   const startSync = useCallback(() => {
-    if (!syncLoading.current) {
+    if (syncLoading) {
       // setSyncLoading(true);
       console.log("start syc diff st", diffRef.current);
       if (diffRef.current && !syncRef.current) {
+        console.log("trig sync cls");
         createLoader();
         const diffState = { ...diffRef.current };
         syncRef.current = new SyncLocalStorageToAPI(
@@ -126,6 +116,10 @@ export function useSyncLocalStorageToAPI(token, localState) {
     }
   }, [makeDispatch, completeSyncAndLoadData, syncLoading]);
 
+  useEffect(() => {
+    if (syncLoading) startSync();
+  }, [startSync, syncLoading]);
+
   function createLoader() {
     toastRef.current = toast;
     toastRef.current.loading("Syncing state, Please wait!");
@@ -136,5 +130,5 @@ export function useSyncLocalStorageToAPI(token, localState) {
     toastRef.current = null;
   }
 
-  return { startSync, syncLoading: syncLoadingRef.current };
+  return { syncLoading, setSyncLoading };
 }

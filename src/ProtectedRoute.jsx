@@ -1,11 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { createContext, useEffect } from "react";
-// import PageLoader from "../components/PageLoader";
+import { createContext, useEffect, useState } from "react";
 import { useLocalStorageState } from "./hooks/useLocalStorageState";
 import Todo from "./pages/Todo";
-import { useDispatch } from "react-redux";
-import { setInitialTodoFromLocalStorage } from "./slices/todo/todoSlice";
-import { setInitialDiffFromLocalStorage } from "./slices/todo/diffSlice";
 import { useSyncLocalStorageToAPI } from "./hooks/useSyncLocalStorageToAPI";
 
 export const AppContext = createContext();
@@ -15,13 +11,11 @@ function AppContextProvider({ children }) {
     null,
     "token",
   );
-  const localState = getLocalStates();
-  const { startSync, syncLoading } = useSyncLocalStorageToAPI(
-    token,
-    localState,
-  );
+  const [sync, setSync] = useState(true);
+  // const localState = getLocalStates();
+  const { startSync, syncLoading, setSyncLoading, removeToken } =
+    useSyncLocalStorageToAPI(token, getLocalStates, setSync);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   //if not authenticated redirect to login page
   useEffect(
@@ -34,10 +28,24 @@ function AppContextProvider({ children }) {
     [token, navigate],
   );
 
+  function removeTokenAndLogout() {
+    removeToken();
+    navigate("/login");
+  }
+
   if (token?.token) {
     return (
       <AppContext.Provider
-        value={{ token, getLocalStates, localState, startSync, syncLoading }}
+        value={{
+          token,
+          getLocalStates,
+          startSync,
+          syncLoading,
+          sync,
+          setSync,
+          setSyncLoading,
+          removeToken: removeTokenAndLogout,
+        }}
       >
         {children}
       </AppContext.Provider>
