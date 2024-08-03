@@ -473,7 +473,7 @@ export const APIUpdateTodoTask = createAsyncThunk(
     { dispatch, getState, rejectWithValue },
   ) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.PATCH(82938938393),
+      API.APIEnum.TASK.PATCH(task.taskId),
       { ...task },
       "updateTodo",
       token.token,
@@ -516,7 +516,7 @@ export const APIDeleteTodoTask = createAsyncThunk(
     { dispatch, getState, rejectWithValue },
   ) => {
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.DELETE(3989283293),
+      API.APIEnum.TASK.DELETE(taskId),
       null,
       "deleteTask",
       token.token,
@@ -559,7 +559,7 @@ export const APIUpdateTodoTaskIndex = createAsyncThunk(
     const payload = { ordering_list: listItems };
 
     const res = await makeAPIRequest(
-      API.APIEnum.TASK.BATCH_UPDATE_ORDERING + "sdfasd/",
+      API.APIEnum.TASK.BATCH_UPDATE_ORDERING,
       payload,
       "updateTask",
       token.token,
