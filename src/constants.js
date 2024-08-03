@@ -45,3 +45,5 @@ export const PREVENT_DESTRUCTURING_FROM_API_ENDPOINT_RESP = [
   "deleteBatchTask",
   "updateOrdering",
 ];
+
+export const TODO_LIST_GAP = 8;

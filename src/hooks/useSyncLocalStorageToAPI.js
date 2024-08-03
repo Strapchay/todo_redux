@@ -19,6 +19,7 @@ import { useCallback } from "react";
 import SyncLocalStorageToAPI from "../dupSyncLocalStorageToAPI";
 import {
   APIListTodo,
+  completeOrUncompleteTodo,
   setInitialTodoFromLocalStorageOrAPI,
 } from "../slices/todo/todoSlice";
 import store from "../store";
@@ -100,6 +101,9 @@ export function useSyncLocalStorageToAPI(
       };
       diffRef.current = diffState;
     } else {
+      if (todos) {
+        completeSyncAndLoadData();
+      }
       if (!dbRef.current) {
         initDb();
       }
@@ -115,10 +119,10 @@ export function useSyncLocalStorageToAPI(
 
   const startSync = useCallback(() => {
     if (syncLoading) {
+      createLoader();
       // setSyncLoading(true);
       if (diffRef.current && !syncRef.current) {
         console.log("trig sync cls");
-        createLoader();
         const diffState = { ...diffRef.current };
         syncRef.current = new SyncLocalStorageToAPI(
           diffState,

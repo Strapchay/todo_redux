@@ -42,6 +42,8 @@ import { useTaskRender } from "../hooks/useTaskRender";
 import { formatEditDate } from "../../utils";
 import Modal from "../Modal";
 import { AppContext } from "../ProtectedRoute";
+import { FixedSizeGrid as Grid } from "react-window";
+import { TODO_LIST_GAP } from "../constants";
 
 function Todo() {
   useEffect(() => {
@@ -257,14 +259,22 @@ function TodoListItem({
   initFormRendered,
   todoTasks,
   handleSyncActive,
+  style: gridStyle = {},
 }) {
   const dispatch = useDispatch();
   const { token, removeToken } = useContext(AppContext);
+  const gap = TODO_LIST_GAP;
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    ...gridStyle,
+    top: gridStyle.top + gap / 2,
+    left: gridStyle.left + gap / 2,
+    width: gridStyle.width - gap,
+    height: gridStyle.height - gap,
+    // overflowX: "hidden",
   };
 
   function formatItemHeading() {
@@ -398,7 +408,6 @@ function TodoListRender({
   const [formRendered, setFormRendered] = useState(false);
   const dispatch = useDispatch();
   const todos = useSelector(selectAllTodos);
-  console.log("the todos value", todos);
   const currentTodo = useSelector(selectCurrentTodo);
 
   function handleAddTodoForm() {
@@ -417,6 +426,7 @@ function TodoListRender({
   }
 
   function handleDragEnd(event) {
+    console.log("the vent drag val", event);
     const { active, over } = event;
     if (active.id !== over.id) {
       dispatch(replaceTodoIndex({ from: active.id, to: over.id }));
@@ -445,18 +455,36 @@ function TodoListRender({
               items={todos}
               strategy={verticalListSortingStrategy}
             >
-              {todos.map((todo) => (
-                <TodoListItem
-                  currentTodo={currentTodo}
-                  id={todo?.todoId}
-                  todo={todo}
-                  todoTasks={todo?.task}
-                  key={todo.todoId}
-                  setInitFormRendered={setInitFormRendered}
-                  initFormRendered={initFormRendered}
-                  handleSyncActive={handleSyncActive}
-                />
-              ))}
+              <Grid
+                style={{ marginBottom: "4rem" }}
+                height={600}
+                columnCount={2}
+                columnWidth={160}
+                rowHeight={110}
+                rowCount={Math.ceil((todos.length ?? 0) / 2)}
+                itemData={todos}
+                itemSize={35}
+                width={320}
+                // overscanRowCount={10}
+                // overscanColumnCount={10}
+              >
+                {({ columnIndex, rowIndex, style, data, columnCount }) => {
+                  const todo = data[rowIndex * 2 + columnIndex];
+                  return (
+                    <TodoListItem
+                      currentTodo={currentTodo}
+                      id={todo?.todoId}
+                      todo={todo}
+                      todoTasks={todo?.task}
+                      key={todo?.todoId}
+                      setInitFormRendered={setInitFormRendered}
+                      initFormRendered={initFormRendered}
+                      handleSyncActive={handleSyncActive}
+                      style={style}
+                    />
+                  );
+                }}
+              </Grid>
             </SortableContext>
             <DragOverlay>
               {activeTodoDict ? (

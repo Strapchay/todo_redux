@@ -359,7 +359,6 @@ export const APICreateDiffTodoTask = createAsyncThunk(
               const todoIndex = todos.findIndex(
                 (todo) => todo.todoId === payloadId.todoId,
               );
-              console.log("the todos aft upd", todos, todoIndex);
 
               const tasks = [...todos[todoIndex].task];
               console.log("the tasks v", tasks);
@@ -370,7 +369,6 @@ export const APICreateDiffTodoTask = createAsyncThunk(
 
               todos[todoIndex] = { ...todos[todoIndex] };
               todos[todoIndex].task = [...tasks];
-              console.log("the todos aft upd", todos);
               dispatch(replaceTodos(todos));
               dispatch(clearTodoItem({ taskToCreate: [] }));
               setReqState();
