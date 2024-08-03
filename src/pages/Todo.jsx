@@ -46,6 +46,7 @@ import { FixedSizeGrid as Grid } from "react-window";
 import { TODO_LIST_GAP } from "../constants";
 import UpdateInfoForm from "./forms/UpdateInfoForm";
 import UpdatePwdForm from "./forms/UpdatePwdForm";
+import Switcher from "./Switcher";
 
 function Todo() {
   useEffect(() => {
@@ -198,6 +199,7 @@ function UpdateInfoComponent({ isActive }) {
       <div className={styles["info-update-heading"]}>
         <h2>Update Your Info</h2>
       </div>
+      <Switcher.Switch />
       <div className={styles["info-update-content"]}>
         {formType === "update-info" && <UpdateInfoForm />}
         {formType === "update-pwd" && <UpdatePwdForm />}
@@ -571,7 +573,9 @@ function TodoRenderer() {
             initFormRendered={initFormRendered}
             handleSyncActive={handleSyncActive}
           />
-          <UpdateInfoComponent isActive={updaterActive} />
+          <Switcher>
+            <UpdateInfoComponent isActive={updaterActive} />
+          </Switcher>
           {syncLoading && (
             <Modal>
               <Modal.Open opens="sync-loader" click={false}></Modal.Open>

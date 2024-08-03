@@ -7,7 +7,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { API } from "../../api";
 import toast from "react-hot-toast";
 import { useContext } from "react";
-import { SwitcherContext } from "../Landing";
+import { SwitcherContext } from "../Switcher";
 
 function LoginForm() {
   const { setCurrentForm, currentForm } = useContext(SwitcherContext);

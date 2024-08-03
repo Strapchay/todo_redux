@@ -1,22 +1,8 @@
 import { useEffect } from "react";
 import styles from "./Landing.module.css";
 import Modal from "../Modal";
-import LoginForm from "./forms/LoginForm";
-import RegisterForm from "./forms/RegisterForm";
-import { createContext } from "react";
-import { useState } from "react";
 import AuthForm from "./forms/AuthForm";
-
-export const SwitcherContext = createContext();
-
-function FormModalBox({ children }) {
-  const [currentForm, setCurrentForm] = useState("");
-  return (
-    <SwitcherContext.Provider value={{ currentForm, setCurrentForm }}>
-      {children}
-    </SwitcherContext.Provider>
-  );
-}
+import Switcher from "./Switcher";
 
 function Landing() {
   useEffect(() => {
@@ -46,7 +32,7 @@ function Landing() {
                 Get your todos in order, seamlessly
               </p>
               <div className={styles["cta-section"]}>
-                <FormModalBox>
+                <Switcher>
                   <Modal>
                     <ul className={styles["btn_list"]}>
                       <Modal.Open opens="login-form">
@@ -81,7 +67,7 @@ function Landing() {
                       </Modal.Window>
                     </ul>
                   </Modal>
-                </FormModalBox>
+                </Switcher>
               </div>
             </div>
           </div>

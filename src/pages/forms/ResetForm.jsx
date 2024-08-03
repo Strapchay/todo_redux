@@ -3,9 +3,9 @@ import styles from "./AuthForm.module.css";
 import { useAuth } from "../../hooks/useAuth";
 import { API } from "../../api";
 import { useContext } from "react";
-import { SwitcherContext } from "../Landing";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
+import { SwitcherContext } from "../Switcher";
 
 function ResetForm() {
   const { setCurrentForm, currentForm } = useContext(SwitcherContext);

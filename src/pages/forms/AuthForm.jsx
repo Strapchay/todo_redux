@@ -3,8 +3,8 @@ import { useContext } from "react";
 import RegisterForm from "./RegisterForm";
 import LoginForm from "./LoginForm";
 import { useEffect } from "react";
-import { SwitcherContext } from "../Landing";
 import ResetForm from "./ResetForm";
+import Switcher, { SwitcherContext } from "../Switcher";
 
 function AuthForm({ formType }) {
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
@@ -15,7 +15,7 @@ function AuthForm({ formType }) {
 
   return (
     <div className={styles["login-container"]}>
-      {!formsNotAcceptingSwitcher.includes(currentForm) && <FormSwitcher />}
+      {!formsNotAcceptingSwitcher.includes(currentForm) && <Switcher.Switch />}
       {currentForm === "create" && <RegisterForm />}
       {currentForm === "login" && <LoginForm />}
       {formsNotAcceptingSwitcher.includes(currentForm) && <ResetForm />}

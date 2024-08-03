@@ -7,12 +7,13 @@ import { useAuth } from "../../hooks/useAuth";
 import { API } from "../../api";
 import toast from "react-hot-toast";
 import { useContext } from "react";
-import { SwitcherContext } from "../Landing";
 import { AppContext } from "../../ProtectedRoute";
+import { SwitcherContext } from "../Switcher";
 
 function UpdateInfoForm() {
   //TODO: if form update info, retrieve dets to upd
   const { token } = useContext(AppContext);
+  const { currentForm, setCurrentForm } = useContext(SwitcherContext);
   const { register, handleSubmit, reset, getValues, formState } = useForm();
   const navigate = useNavigate();
   const { errors } = formState;

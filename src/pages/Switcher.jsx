@@ -1,19 +1,15 @@
 import { createContext, useContext, useState } from "react";
-import styles from "./AuthForm.module.css";
+import styles from "./forms/AuthForm.module.css";
 
-const SwitcherContext = createContext();
+export const SwitcherContext = createContext();
 
-function SwitcherProvider({ children }) {
+function Switcher({ children }) {
   const [currentForm, setCurrentForm] = useState("");
   return (
     <SwitcherContext.Provider value={{ currentForm, setCurrentForm }}>
       {children}
     </SwitcherContext.Provider>
   );
-}
-
-function Switcher({ children }) {
-  return <SwitcherProvider.Provider>{children}</SwitcherProvider.Provider>;
 }
 
 function Switch() {

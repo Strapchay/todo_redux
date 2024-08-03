@@ -6,7 +6,7 @@ import { useLocalStorageState } from "../../hooks/useLocalStorageState";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
 import { useContext } from "react";
-import { SwitcherContext } from "../Landing";
+import { SwitcherContext } from "../Switcher";
 
 function RegisterForm() {
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
