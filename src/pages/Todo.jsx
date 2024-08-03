@@ -398,6 +398,7 @@ function TodoListRender({
   const [formRendered, setFormRendered] = useState(false);
   const dispatch = useDispatch();
   const todos = useSelector(selectAllTodos);
+  console.log("the todos value", todos);
   const currentTodo = useSelector(selectCurrentTodo);
 
   function handleAddTodoForm() {
@@ -433,7 +434,7 @@ function TodoListRender({
         + Add Todo
       </div>
       <div className={styles["component-container"]} id="component-container">
-        {todos.length > 0 && (
+        {todos?.length > 0 && (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

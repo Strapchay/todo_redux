@@ -21,7 +21,7 @@ export function useTaskRender(handleSyncActive) {
   const dispatch = useDispatch();
   const sensors = useSensors(useSensor(PointerSensor));
   const currentTodo = useSelector((state) =>
-    state.todos.todo.find((t) => t.todoId === state.todos.currentTodo),
+    state.todos?.todo?.find((t) => t.todoId === state.todos.currentTodo),
   );
 
   const incompletedTasks = currentTodo?.task?.filter((task) => !task.completed);

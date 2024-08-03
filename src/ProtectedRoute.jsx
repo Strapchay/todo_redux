@@ -7,14 +7,18 @@ import { useSyncLocalStorageToAPI } from "./hooks/useSyncLocalStorageToAPI";
 export const AppContext = createContext();
 
 function AppContextProvider({ children }) {
-  const { token, setToken, getLocalStates } = useLocalStorageState(
+  const { token, removeToken, getLocalStates } = useLocalStorageState(
     null,
     "token",
   );
   const [sync, setSync] = useState(true);
   // const localState = getLocalStates();
-  const { startSync, syncLoading, setSyncLoading, removeToken } =
-    useSyncLocalStorageToAPI(token, getLocalStates, setSync);
+  const { startSync, syncLoading, setSyncLoading } = useSyncLocalStorageToAPI(
+    token,
+    getLocalStates,
+    setSync,
+    removeToken,
+  );
   const navigate = useNavigate();
 
   //if not authenticated redirect to login page

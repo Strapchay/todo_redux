@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import {
   APICreateTodo,
   replaceTodos,
-  setInitialTodoFromLocalStorage,
+  setInitialTodoFromLocalStorageOrAPI,
   updateTodo,
 } from "./todoSlice";
 import {

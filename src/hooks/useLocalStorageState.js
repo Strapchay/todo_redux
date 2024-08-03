@@ -13,9 +13,9 @@ export function useLocalStorageState(initialState, authToken) {
     [token, authToken],
   );
 
-  function removeToken() {
+  const removeToken = useCallback(() => {
     localStorage.removeItem("token");
-  }
+  }, []);
 
   const getLocalStates = useCallback(() => {
     const savedTodos = localStorage.getItem("todos");

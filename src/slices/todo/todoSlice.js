@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { arrayMove } from "../../../utils";
 import {
   formatAPIResponseBody,
+  formatLoadedAPIData,
   makeAPIRequest,
   persistDiff,
   persistTodo,
@@ -29,12 +30,10 @@ const todoSlice = createSlice({
   name: "todo",
   initialState,
   reducers: {
-    setInitialTodoFromLocalStorage(state, action) {
-      // let modState = { ...state };
-      // const modState = action.payload;
-      // console.log("the modState value", modState);
-      // state = { ...modState };
-      return { ...action.payload };
+    setInitialTodoFromLocalStorageOrAPI(state, action) {
+      const isArray = Array.isArray(action.payload);
+      if (!isArray) return { ...action.payload };
+      else return action.payload;
     },
     replaceTodos(state, action) {
       state.todo = [...action.payload];
@@ -226,12 +225,38 @@ export const {
   replaceTaskIndexForTodo,
   setCurrentTodo,
   replaceTodoIndex,
-  setInitialTodoFromLocalStorage,
+  setInitialTodoFromLocalStorageOrAPI,
 } = todoSlice.actions;
 export default todoSlice.reducer;
 
 export const selectAllTodos = (state) => state.todos.todo;
 export const selectCurrentTodo = (state) => state.todos.currentTodo;
+
+export const APIListTodo = createAsyncThunk(
+  "todo/APIListTodo",
+  async ({ token, removeToken }, { dispatch, getState, rejectWithValue }) => {
+    const res = await makeAPIRequest(
+      API.APIEnum.TODO.LIST,
+      null,
+      "loadTodos",
+      token.token,
+      "GET",
+      removeToken,
+      {
+        onSuccess: (data) => {
+          const todos = { ...getState().todos };
+          const formattedData = formatLoadedAPIData(data);
+          todos.todo = formattedData;
+          dispatch(setInitialTodoFromLocalStorageOrAPI(todos));
+
+          persistTodo(todos);
+        },
+        onError: (_) => {},
+      },
+    );
+    return res;
+  },
+);
 
 export const APICreateTodo = createAsyncThunk(
   "todo/APICreateTodo",

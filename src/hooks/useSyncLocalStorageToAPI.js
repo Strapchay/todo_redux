@@ -17,12 +17,22 @@ import { API } from "../api";
 import { useEffect } from "react";
 import { useCallback } from "react";
 import SyncLocalStorageToAPI from "../dupSyncLocalStorageToAPI";
-import { setInitialTodoFromLocalStorage } from "../slices/todo/todoSlice";
+import {
+  APIListTodo,
+  setInitialTodoFromLocalStorageOrAPI,
+} from "../slices/todo/todoSlice";
 import store from "../store";
 
-export function useSyncLocalStorageToAPI(token, getLocalState, setSync) {
+export function useSyncLocalStorageToAPI(
+  token,
+  getLocalState,
+  setSync,
+  removeToken,
+) {
   const dispatch = useDispatch();
   const [syncLoading, setSyncLoading] = useState(false);
+  const [databaseLoaded, setDatabaseLoaded] = useState(false);
+  const dbRef = useRef(false);
   const syncRef = useRef(null);
   const toastRef = useRef();
   const diffRef = useRef(null);
@@ -48,6 +58,7 @@ export function useSyncLocalStorageToAPI(token, getLocalState, setSync) {
         return dispatch(APIUpdateDiffTodoIndex(dict));
       if (type === "APIUpdateDiffTodoTaskIndex")
         return dispatch(APIUpdateDiffTodoTaskIndex(dict));
+      if (type === "APIListTodo") return dispatch(APIListTodo(dict));
     },
     [dispatch, token],
   );
@@ -69,38 +80,42 @@ export function useSyncLocalStorageToAPI(token, getLocalState, setSync) {
   }, [dispatch, syncLoading, setSync]);
 
   useEffect(() => {
-    console.log("the get local st", getLocalState);
-    if (getLocalState) {
-      const { todos = null, diff = null } = getLocalState?.() ?? {};
-      if (todos) dispatch(setInitialTodoFromLocalStorage(todos));
-      if (diff) {
-        console.log("diff before diffState", diff);
-        dispatch(setInitialDiffFromLocalStorage(diff));
-        const diffState = {
-          pendingTodos: diff?.todoToCreate,
-          pendingTasks: diff?.taskToCreate,
-          pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
-          pendingTasksToDelete: diff?.taskToDelete,
-          pendingTodoToUpdate: diff?.todoToUpdate,
-          pendingTaskToUpdate: diff?.taskToUpdate,
-          //ordering
-          pendingTodoOrdering: diff?.todoOrdering,
-          pendingTaskOrdering: diff?.taskOrdering,
-        };
-        diffRef.current = diffState;
-      } else {
-        completeSyncAndLoadData();
-      }
-    } else {
-      console.log("trig else");
+    const initDb = async () => {
+      await makeDispatch({ removeToken }, "APIListTodo");
       completeSyncAndLoadData();
+      dbRef.current = true;
+    };
+    const { todos = null, diff = null } = getLocalState?.() ?? {};
+    if (todos) dispatch(setInitialTodoFromLocalStorageOrAPI(todos));
+    if (diff) {
+      dispatch(setInitialDiffFromLocalStorage(diff));
+      const diffState = {
+        pendingTodos: diff?.todoToCreate,
+        pendingTasks: diff?.taskToCreate,
+        pendingTodosToDelete: diff?.todoToDelete.map((todo) => +todo),
+        pendingTasksToDelete: diff?.taskToDelete,
+        pendingTodoToUpdate: diff?.todoToUpdate,
+        pendingTaskToUpdate: diff?.taskToUpdate,
+        //ordering
+      };
+      diffRef.current = diffState;
+    } else {
+      if (!dbRef.current) {
+        initDb();
+      }
     }
-  }, [dispatch, getLocalState, completeSyncAndLoadData]);
+  }, [
+    dispatch,
+    getLocalState,
+    completeSyncAndLoadData,
+    removeToken,
+    makeDispatch,
+    databaseLoaded,
+  ]);
 
   const startSync = useCallback(() => {
     if (syncLoading) {
       // setSyncLoading(true);
-      console.log("start syc diff st", diffRef.current);
       if (diffRef.current && !syncRef.current) {
         console.log("trig sync cls");
         createLoader();
