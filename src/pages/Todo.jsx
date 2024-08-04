@@ -47,6 +47,7 @@ import { TODO_LIST_GAP, UPDATE_FORMS } from "../constants";
 import UpdateInfoForm from "./forms/UpdateInfoForm";
 import UpdatePwdForm from "./forms/UpdatePwdForm";
 import Switcher, { SwitcherContext } from "./Switcher";
+import { useScreens } from "../hooks/useScreens";
 
 function Todo() {
   useEffect(() => {
@@ -430,7 +431,9 @@ function TodoListRender({
   setInitFormRendered,
   handleSyncActive,
 }) {
-  const { token, removeToken } = useContext(AppContext);
+  const { token, removeToken, mobileScreen, setMobileScreen } =
+    useContext(AppContext);
+  const { gridWidthAndColumnWidth } = useScreens(mobileScreen, setMobileScreen);
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTodoDict, setActiveTodoDict] = useState({});
   const [formRendered, setFormRendered] = useState(false);
@@ -486,15 +489,13 @@ function TodoListRender({
               <Grid
                 style={{ marginBottom: "4rem" }}
                 height={600}
-                columnCount={2}
-                columnWidth={160}
+                columnCount={gridWidthAndColumnWidth.columnCount}
+                columnWidth={gridWidthAndColumnWidth.columnWidth}
                 rowHeight={110}
                 rowCount={Math.ceil((todos.length ?? 0) / 2)}
                 itemData={todos}
                 itemSize={35}
-                width={320}
-                // overscanRowCount={10}
-                // overscanColumnCount={10}
+                width={gridWidthAndColumnWidth.width}
               >
                 {({ columnIndex, rowIndex, style, data, columnCount }) => {
                   const todo = data[rowIndex * 2 + columnIndex];

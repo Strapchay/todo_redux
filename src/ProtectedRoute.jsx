@@ -20,6 +20,7 @@ function AppContextProvider({ children }) {
     removeToken,
   );
   const navigate = useNavigate();
+  const [mobileScreen, setMobileScreen] = useState(false);
 
   //if not authenticated redirect to login page
   useEffect(
@@ -49,6 +50,8 @@ function AppContextProvider({ children }) {
           setSync,
           setSyncLoading,
           removeToken: removeTokenAndLogout,
+          mobileScreen,
+          setMobileScreen,
         }}
       >
         {children}
