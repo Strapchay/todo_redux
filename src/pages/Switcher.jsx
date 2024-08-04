@@ -1,42 +1,56 @@
 import { createContext, useContext, useState } from "react";
 import styles from "./forms/AuthForm.module.css";
+import TodoStyles from "./Todo.module.css";
 
 export const SwitcherContext = createContext();
 
-function Switcher({ children }) {
+function Switcher({ children, propValues }) {
   const [currentForm, setCurrentForm] = useState("");
+  const [formProps, setFormProps] = useState(propValues ?? []);
   return (
-    <SwitcherContext.Provider value={{ currentForm, setCurrentForm }}>
+    <SwitcherContext.Provider
+      value={{ currentForm, setCurrentForm, formProps, setFormProps }}
+    >
       {children}
     </SwitcherContext.Provider>
   );
 }
 
 function Switch() {
-  const { currentForm, setCurrentForm } = useContext(SwitcherContext);
+  const { currentForm, setCurrentForm, formProps } =
+    useContext(SwitcherContext);
+
   return (
     <>
-      <div className={styles["form-option"]}>
-        <div
-          className={[
-            styles["option-box"],
-            styles["create-box"],
-            styles[currentForm === "create" ? "active" : "inactive"],
-          ].join(" ")}
-          onClick={(e) => setCurrentForm((_) => "create")}
-        >
-          <h2 className={styles["option-heading"]}>Sign up</h2>
-        </div>
-        <div
-          className={[
-            styles["option-box"],
-            styles["login-box"],
-            styles[currentForm === "login" ? "active" : "inactive"],
-          ].join(" ")}
-          onClick={(e) => setCurrentForm((_) => "login")}
-        >
-          <h2 className={styles["option-heading"]}> Login</h2>
-        </div>
+      <div
+        className={[
+          styles["form-option"],
+          styles["update-form-option"] ?? TodoStyles["update-form-option"],
+        ].join(" ")}
+      >
+        {formProps.map((prop) => (
+          <div
+            key={prop.form}
+            className={[
+              styles["option-box"],
+              styles[`${prop.form}-box`] ?? TodoStyles[`${prop.form}-box`],
+              styles[`info-update-option-box`] ??
+                TodoStyles[`info-update-option-box`],
+              styles[currentForm === prop.form ? "active" : "inactive"],
+            ].join(" ")}
+            onClick={(e) => setCurrentForm((_) => prop.form)}
+          >
+            <h2
+              className={[
+                styles[`${prop.form}-heading`] ??
+                  TodoStyles[`${prop.form}-heading`],
+                styles["option-heading"],
+              ].join(" ")}
+            >
+              {prop.text}
+            </h2>
+          </div>
+        ))}
       </div>
     </>
   );

@@ -3,6 +3,7 @@ import styles from "./Landing.module.css";
 import Modal from "../Modal";
 import AuthForm from "./forms/AuthForm";
 import Switcher from "./Switcher";
+import { AUTH_FORMS } from "../constants";
 
 function Landing() {
   useEffect(() => {
@@ -32,7 +33,7 @@ function Landing() {
                 Get your todos in order, seamlessly
               </p>
               <div className={styles["cta-section"]}>
-                <Switcher>
+                <Switcher propValues={AUTH_FORMS}>
                   <Modal>
                     <ul className={styles["btn_list"]}>
                       <Modal.Open opens="login-form">

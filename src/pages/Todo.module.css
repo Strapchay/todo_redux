@@ -406,7 +406,7 @@
 .update-form-box > input {
     color: var(--color-primary--bg);
     height: 100%;
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     background: #ededed;
     border: none;
     padding: 0 0 0 0.8rem;
@@ -421,11 +421,11 @@
     outline: none;
 }
 
-.info-update-content .form-option {
+.update-form-option {
     margin-bottom: 2rem;
 }
 
-.info-update-content .form-option .option-box {
+.info-update-option-box {
     padding: 0.8rem 0rem !important;
 }
 
@@ -439,7 +439,7 @@
 
 .updateInfo-box,
 .updatePwd-box {
-    font-size: 1rem !important;
+    /* font-size: 1rem !important; */
     white-space: nowrap;
 }
 

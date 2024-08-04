@@ -43,10 +43,10 @@ import { formatEditDate } from "../../utils";
 import Modal from "../Modal";
 import { AppContext } from "../ProtectedRoute";
 import { FixedSizeGrid as Grid } from "react-window";
-import { TODO_LIST_GAP } from "../constants";
+import { TODO_LIST_GAP, UPDATE_FORMS } from "../constants";
 import UpdateInfoForm from "./forms/UpdateInfoForm";
 import UpdatePwdForm from "./forms/UpdatePwdForm";
-import Switcher from "./Switcher";
+import Switcher, { SwitcherContext } from "./Switcher";
 
 function Todo() {
   useEffect(() => {
@@ -58,8 +58,11 @@ function Todo() {
       document.body.classList.remove("body");
     };
   }, []);
-
-  return <TodoRenderer />;
+  return (
+    <Switcher propValues={UPDATE_FORMS}>
+      <TodoRenderer />;
+    </Switcher>
+  );
 }
 
 function TaskAddInput({
@@ -191,8 +194,13 @@ function SortableTaskInput({ tasks, activeDict, handleSyncActive }) {
   );
 }
 
-function UpdateInfoComponent({ isActive }) {
-  const [formType, setFormType] = useState("update-info");
+function UpdateInfoComponent() {
+  const { formProps, currentForm, setCurrentForm } =
+    useContext(SwitcherContext);
+
+  useEffect(() => {
+    setCurrentForm(formProps[0].form);
+  }, []);
 
   return (
     <div className={styles["td-update-info"]}>
@@ -201,8 +209,8 @@ function UpdateInfoComponent({ isActive }) {
       </div>
       <div className={styles["info-update-content"]}>
         <Switcher.Switch />
-        {formType === "update-info" && <UpdateInfoForm />}
-        {formType === "update-pwd" && <UpdatePwdForm />}
+        {currentForm === formProps[0].form && <UpdateInfoForm />}
+        {currentForm === formProps[1].form && <UpdatePwdForm />}
       </div>
     </div>
   );
@@ -523,11 +531,10 @@ function TodoRenderer() {
   const [syncUIActive, setSyncUIActive] = useState(false);
   const [updaterActive, setUpdaterActive] = useState(false);
   const { syncLoading, setSyncLoading, sync, setSync } = useContext(AppContext);
+  const { currentForm, setCurrentForm } = useContext(SwitcherContext);
 
   useEffect(() => {
-    console.log("the sync value", sync);
     if (sync && !syncLoading) {
-      console.log("about starting sync");
       setSyncLoading(true);
     }
   }, [setSyncLoading, sync, syncLoading]);
@@ -537,7 +544,13 @@ function TodoRenderer() {
   }
 
   return (
-    <div className={[styles["container"], styles["todo-active"]].join(" ")}>
+    <div
+      className={[
+        styles["container"],
+        styles["todo-active"],
+        currentForm && styles["update-info-active"],
+      ].join(" ")}
+    >
       <header>
         <nav className={styles["navbar"]}>
           <p
@@ -547,7 +560,10 @@ function TodoRenderer() {
           </p>
           <p className={styles["navbar-header-title"]}>TD App</p>
           <button
-            onClick={() => setUpdaterActive((v) => !v)}
+            onClick={() => {
+              setUpdaterActive((v) => !v);
+              currentForm && setCurrentForm("");
+            }}
             className={styles["btn-update"]}
           >
             Update Info
@@ -573,9 +589,8 @@ function TodoRenderer() {
             initFormRendered={initFormRendered}
             handleSyncActive={handleSyncActive}
           />
-          <Switcher>
-            <UpdateInfoComponent isActive={updaterActive} />
-          </Switcher>
+          {updaterActive && <UpdateInfoComponent />}
+
           {syncLoading && (
             <Modal>
               <Modal.Open opens="sync-loader" click={false}></Modal.Open>

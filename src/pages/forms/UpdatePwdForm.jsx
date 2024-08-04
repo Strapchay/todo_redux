@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
-import styles from "./AuthForm.module.css";
+import styles from "../Todo.module.css";
+import globals from "./AuthForm.module.css";
 import { useLocalStorageState } from "../../hooks/useLocalStorageState";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
@@ -12,7 +13,7 @@ import { SwitcherContext } from "../Switcher";
 
 function UpdatePwdForm() {
   //TODO: if form update info, retrieve dets to upd
-  const { token } = useContext(AppContext);
+  const { token, removeToken } = useContext(AppContext);
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
   const { register, handleSubmit, reset, getValues, formState } = useForm();
   const navigate = useNavigate();
@@ -21,7 +22,8 @@ function UpdatePwdForm() {
     API.APIEnum.USER.UPDATE_PWD,
     reset,
     "updatePwd",
-    token,
+    token.token,
+    removeToken,
   );
 
   function onSubmit(data) {
@@ -30,6 +32,7 @@ function UpdatePwdForm() {
       {
         onSuccess: (res) => {
           reset();
+          toast.success("Password update completed successfully");
         },
         onError: (res) => {},
       },
@@ -42,7 +45,7 @@ function UpdatePwdForm() {
   return (
     <form
       action=""
-      className={styles["form-class"]}
+      className={globals["form-class"]}
       id="update-info-form"
       onSubmit={handleSubmit(onSubmit, onError)}
     >
@@ -94,7 +97,9 @@ function UpdatePwdForm() {
           })}
         />
       </div>
-      <button className={styles["btn-submit"]}>Submit</button>
+      <button className={styles["btn-submit"] ?? globals["btn-submit"]}>
+        Submit
+      </button>
     </form>
   );
 }

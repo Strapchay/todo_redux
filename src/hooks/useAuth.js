@@ -1,7 +1,13 @@
 import toast from "react-hot-toast";
 import { makeAPIRequest } from "../helpers";
 
-export function useAuth(authUrl, formReset, formAction, token = null) {
+export function useAuth(
+  authUrl,
+  formReset,
+  formAction,
+  token = null,
+  removeToken,
+) {
   async function handleRequest(payload, extraActions, action = "POST") {
     try {
       const data = await makeAPIRequest(
@@ -10,9 +16,11 @@ export function useAuth(authUrl, formReset, formAction, token = null) {
         formAction,
         token,
         action,
+        removeToken,
       );
       if (data) {
-        formReset();
+        //prevents form resetting to old values for updateInfo form
+        formAction !== "updateInfo" ? formReset() : null;
         if (extraActions?.onSuccess) extraActions.onSuccess(data);
       }
     } catch (err) {

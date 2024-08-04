@@ -1,35 +1,65 @@
 import { useForm } from "react-hook-form";
-import styles from "./AuthForm.module.css";
 import { useLocalStorageState } from "../../hooks/useLocalStorageState";
+import styles from "../Todo.module.css";
+import globals from "./AuthForm.module.css";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { API } from "../../api";
 import toast from "react-hot-toast";
 import { useContext } from "react";
 import { AppContext } from "../../ProtectedRoute";
 import { SwitcherContext } from "../Switcher";
+import { makeAPIRequest } from "../../helpers";
 
 function UpdateInfoForm() {
-  //TODO: if form update info, retrieve dets to upd
-  const { token } = useContext(AppContext);
+  const { token, removeToken } = useContext(AppContext);
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
-  const { register, handleSubmit, reset, getValues, formState } = useForm();
+  const dataLoaded = useRef(false);
+  const { register, handleSubmit, reset, getValues, formState } = useForm({
+    defaultValues: {},
+  });
   const navigate = useNavigate();
   const { errors } = formState;
   const { handleRequest } = useAuth(
     API.APIEnum.USER.UPDATE_INFO,
     reset,
-    "updatePwd",
-    token,
+    "updateInfo",
+    token.token,
+    removeToken,
   );
+
+  useEffect(() => {
+    async function getUser() {
+      if (!dataLoaded.current) {
+        const user = await makeAPIRequest(
+          API.APIEnum.USER.GET,
+          null,
+          "getUser",
+          token.token,
+          "GET",
+          removeToken,
+          {
+            onSuccess: (data) => {
+              dataLoaded.current = true;
+            },
+            onError: () => {},
+          },
+        );
+        reset(user);
+        console.log("the user value", user);
+      }
+    }
+    getUser();
+  }, []);
 
   function onSubmit(data) {
     handleRequest(
       data,
       {
         onSuccess: (res) => {
-          reset();
+          toast.success("User data update completed successfully");
+          return;
         },
         onError: (res) => {},
       },
@@ -42,7 +72,7 @@ function UpdateInfoForm() {
   return (
     <form
       action=""
-      className={styles["form-class"]}
+      className={globals["form-class"]}
       id="update-info-form"
       onSubmit={handleSubmit(onSubmit, onError)}
     >
@@ -98,7 +128,9 @@ function UpdateInfoForm() {
           })}
         />
       </div>
-      <button className="btn-submit">Submit</button>
+      <button className={styles["btn-submit"] ?? globals["btn-submit"]}>
+        Submit
+      </button>
     </form>
   );
 }

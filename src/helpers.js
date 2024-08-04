@@ -108,6 +108,7 @@ export async function makeAPIRequest(
   extraActions = null,
 ) {
   try {
+    console.log("the token val", token);
     const prepare = {
       method: method,
       headers: {

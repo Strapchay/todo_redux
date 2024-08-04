@@ -47,3 +47,13 @@ export const PREVENT_DESTRUCTURING_FROM_API_ENDPOINT_RESP = [
 ];
 
 export const TODO_LIST_GAP = 8;
+
+export const AUTH_FORMS = [
+  { form: "create", text: "Sign up" },
+  { form: "login", text: "Login" },
+];
+
+export const UPDATE_FORMS = [
+  { form: "updateInfo", text: "Update Info" },
+  { form: "updatePwd", text: "Update Password" },
+];
