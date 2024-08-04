@@ -199,8 +199,8 @@ function UpdateInfoComponent({ isActive }) {
       <div className={styles["info-update-heading"]}>
         <h2>Update Your Info</h2>
       </div>
-      <Switcher.Switch />
       <div className={styles["info-update-content"]}>
+        <Switcher.Switch />
         {formType === "update-info" && <UpdateInfoForm />}
         {formType === "update-pwd" && <UpdatePwdForm />}
       </div>
