@@ -56,6 +56,14 @@
 .navbar-back--btn {
     color: var(--color-primary--bg);
     cursor: pointer;
+    border: none;
+    border-radius: 0.4rem;
+    height: 2rem;
+    width: 4rem;
+    transform: translate(24%, 18%);
+    background: #b1b1b1;
+    font-size: 1.4rem;
+    text-align: center;
 }
 
 .navbar-header-title {
@@ -711,19 +719,6 @@
 
     .component-container {
         grid-template-columns: 1fr 1fr 1fr;
-    }
-
-    /* activate for render container */
-    .mobile-nav--hidden {
-        display: none;
-    }
-
-    .draggable-component-btn {
-        display: none;
-    }
-
-    .td-component-actions .draggable-component-btn {
-        display: none;
     }
 
     .td-component-actions-container {

@@ -20,7 +20,10 @@ function AppContextProvider({ children }) {
     removeToken,
   );
   const navigate = useNavigate();
-  const [mobileScreen, setMobileScreen] = useState(false);
+  const [mobileScreen, setMobileScreen] = useState({
+    active: false,
+    default: true,
+  });
 
   //if not authenticated redirect to login page
   useEffect(

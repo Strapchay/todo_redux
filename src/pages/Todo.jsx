@@ -233,7 +233,6 @@ function TaskContentRender({ initFormRendered, handleSyncActive }) {
       className={[
         styles["td-render--container"],
         styles[!initFormRendered ? "hidden" : ""],
-        styles["mobile-nav--hidden"],
       ].join(" ")}
     >
       <div className={styles["td-render--body"]}>
@@ -433,7 +432,7 @@ function TodoListRender({
 }) {
   const { token, removeToken, mobileScreen, setMobileScreen } =
     useContext(AppContext);
-  const { gridWidthAndColumnWidth } = useScreens(mobileScreen, setMobileScreen);
+  const { gridWidthAndColumnWidth } = useScreens();
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTodoDict, setActiveTodoDict] = useState({});
   const [formRendered, setFormRendered] = useState(false);
@@ -448,6 +447,7 @@ function TodoListRender({
     }
     if (initFormRendered)
       dispatch(APICreateTodo({ token, handleSyncActive, removeToken }));
+    if (mobileScreen.active) setMobileScreen((v) => ({ ...v, default: false }));
   }
 
   function handleDragStart(event) {
@@ -531,9 +531,16 @@ function TodoRenderer() {
   const [initFormRendered, setInitFormRendered] = useState(false);
   const [syncUIActive, setSyncUIActive] = useState(false);
   const [updaterActive, setUpdaterActive] = useState(false);
-  const { syncLoading, setSyncLoading, sync, setSync } = useContext(AppContext);
-  const { currentForm, setCurrentForm } = useContext(SwitcherContext);
+  const {
+    syncLoading,
+    setSyncLoading,
+    sync,
+    setSync,
+    mobileScreen,
+    setMobileScreen,
+  } = useContext(AppContext);
 
+  const { currentForm, setCurrentForm } = useContext(SwitcherContext);
   useEffect(() => {
     if (sync && !syncLoading) {
       setSyncLoading(true);
@@ -554,11 +561,14 @@ function TodoRenderer() {
     >
       <header>
         <nav className={styles["navbar"]}>
-          <p
-            className={[styles["navbar-back--btn"], styles["hidden"]].join(" ")}
-          >
-            Back
-          </p>
+          {mobileScreen.active && !mobileScreen.default && (
+            <p
+              onClick={() => setMobileScreen((v) => ({ ...v, default: true }))}
+              className={[styles["navbar-back--btn"]].join(" ")}
+            >
+              Back
+            </p>
+          )}
           <p className={styles["navbar-header-title"]}>TD App</p>
           <button
             onClick={() => {
@@ -581,15 +591,26 @@ function TodoRenderer() {
           />
         )}
         <div className={styles["td-row"]}>
-          <TodoListRender
-            initFormRendered={initFormRendered}
-            setInitFormRendered={setInitFormRendered}
-            handleSyncActive={handleSyncActive}
-          />
-          <TaskContentRender
-            initFormRendered={initFormRendered}
-            handleSyncActive={handleSyncActive}
-          />
+          {(mobileScreen.active && mobileScreen.default) ||
+          !mobileScreen.active ? (
+            <TodoListRender
+              initFormRendered={initFormRendered}
+              setInitFormRendered={setInitFormRendered}
+              handleSyncActive={handleSyncActive}
+            />
+          ) : (
+            ""
+          )}
+
+          {(mobileScreen.active && !mobileScreen.default) ||
+          !mobileScreen.active ? (
+            <TaskContentRender
+              initFormRendered={initFormRendered}
+              handleSyncActive={handleSyncActive}
+            />
+          ) : (
+            ""
+          )}
           {updaterActive && <UpdateInfoComponent />}
 
           {syncLoading && (
