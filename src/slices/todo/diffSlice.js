@@ -64,7 +64,7 @@ const diffSlice = createSlice({
       state.diffActive = true;
     },
     todoOrdering(state, action) {
-      state.todoOrdering = action.payload.ordering_list;
+      state.todoOrdering = [...action.payload];
       state.diffActive = true;
     },
     taskToCreate(state, action) {
@@ -107,12 +107,6 @@ const diffSlice = createSlice({
       state.syncActive = true;
     },
   },
-  // extraReducers(builder) {
-  // builder.addCase(APICreateTodo.rejected, (state, action) => {
-  //   diffSlice.todoToCreate(state, {});
-  //   console.log("request failed,builder logic trig");
-  // });
-  // },
 });
 
 export default diffSlice.reducer;
@@ -135,7 +129,14 @@ export const {
 export const APICreateDiffTodo = createAsyncThunk(
   "todo/APICreateDiffTodo",
   async (
-    { token, createTodoPayload, pendingState, setReqState, handleSetSyncState },
+    {
+      token,
+      removeToken,
+      createTodoPayload,
+      pendingState,
+      setReqState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
     handleSetSyncState("add");
@@ -150,6 +151,7 @@ export const APICreateDiffTodo = createAsyncThunk(
       payloadLength > 1 ? "createBatchTodo" : "createTodo",
       token.token,
       "POST",
+      removeToken,
       {
         onSuccess: (data) => {
           const formattedReturnedData = formatBatchCreatedReturnData(
@@ -194,7 +196,13 @@ export const APICreateDiffTodo = createAsyncThunk(
 export const APIDeleteDiffTodo = createAsyncThunk(
   "todo/APIDeleteDiffTodo",
   async (
-    { token, pendingTodosToDelete, setReqState, handleSetSyncState },
+    {
+      token,
+      removeToken,
+      pendingTodosToDelete,
+      setReqState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
     handleSetSyncState("add");
@@ -212,6 +220,7 @@ export const APIDeleteDiffTodo = createAsyncThunk(
         todosToDeleteLength > 1 ? "deleteTodoBatch" : "deleteTodo",
         token.token,
         "DELETE",
+        removeToken,
         {
           onSuccess: (data) => {
             dispatch(clearTodoItem({ todoToDelete: [] }));
@@ -235,7 +244,13 @@ export const APIDeleteDiffTodo = createAsyncThunk(
 export const APIUpdateDiffTodo = createAsyncThunk(
   "todo/APIUpdateDiffTodo",
   async (
-    { token, createTodoToUpdatePayload, setReqState, handleSetSyncState },
+    {
+      token,
+      removeToken,
+      createTodoToUpdatePayload,
+      setReqState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
     handleSetSyncState("add");
@@ -255,6 +270,7 @@ export const APIUpdateDiffTodo = createAsyncThunk(
         payloadLength > 1 ? "updateBatchTodo" : "updateTodo",
         token.token,
         "PATCH",
+        removeToken,
         {
           onSuccess: (data) => {
             //clear the data from the diff
@@ -279,7 +295,14 @@ export const APIUpdateDiffTodo = createAsyncThunk(
 export const APIUpdateDiffTodoIndex = createAsyncThunk(
   "todo/APIUpdateDiffTodoIndex",
   async (
-    { token, orderingPayload, type, setReqState, handleSetSyncState },
+    {
+      token,
+      removeToken,
+      orderingPayload,
+      type,
+      setReqState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
     handleSetSyncState("add");
@@ -298,6 +321,7 @@ export const APIUpdateDiffTodoIndex = createAsyncThunk(
         "updateOrdering",
         token.token,
         "PATCH",
+        removeToken,
         {
           onSuccess: (data) => {
             //clear the data from the diff
@@ -324,6 +348,7 @@ export const APICreateDiffTodoTask = createAsyncThunk(
   async (
     {
       token,
+      removeToken,
       createTasksPayload,
       setReqState,
       comp,
@@ -346,6 +371,7 @@ export const APICreateDiffTodoTask = createAsyncThunk(
         payloadLength > 1 ? "createBatchTask" : "createTask",
         token.token,
         "POST",
+        removeToken,
         {
           onSuccess: async (data) => {
             //TODO: imp differ
@@ -361,7 +387,6 @@ export const APICreateDiffTodoTask = createAsyncThunk(
               );
 
               const tasks = [...todos[todoIndex].task];
-              console.log("the tasks v", tasks);
               const taskIndex = tasks.findIndex(
                 (task) => task.taskId === payloadId.taskId,
               );
@@ -395,7 +420,13 @@ export const APICreateDiffTodoTask = createAsyncThunk(
 export const APIDeleteDiffTodoTask = createAsyncThunk(
   "todo/APIDeleteDiffTodoTask",
   async (
-    { token, pendingTasksToDelete, setReqState, handleSetSyncState },
+    {
+      token,
+      removeToken,
+      pendingTasksToDelete,
+      setReqState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
     handleSetSyncState("add");
@@ -413,6 +444,7 @@ export const APIDeleteDiffTodoTask = createAsyncThunk(
         payloadLength > 1 ? "deleteBatchTask" : "deleteTask",
         token.token,
         "DELETE",
+        removeToken,
         {
           onSuccess: (data) => {
             dispatch(clearTodoItem({ taskToDelete: [] }));
@@ -436,7 +468,13 @@ export const APIDeleteDiffTodoTask = createAsyncThunk(
 export const APIUpdateDiffTodoTask = createAsyncThunk(
   "todo/APIUpdateDiffTodoTask",
   async (
-    { token, createTaskToUpdatePayload, setReqState, handleSetSyncState },
+    {
+      token,
+      removeToken,
+      createTaskToUpdatePayload,
+      setReqState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
     handleSetSyncState("add");
@@ -456,6 +494,7 @@ export const APIUpdateDiffTodoTask = createAsyncThunk(
         payloadLength > 1 ? "updateBatchTask" : "updateTask",
         token.token,
         "PATCH",
+        removeToken,
         {
           onSuccess: (data) => {
             //clear the data from the diff
@@ -480,7 +519,14 @@ export const APIUpdateDiffTodoTask = createAsyncThunk(
 export const APIUpdateDiffTodoTaskIndex = createAsyncThunk(
   "todo/APIUpdateDiffTodoTaskIndex",
   async (
-    { token, orderingPayload, type, setReqState, handleSetSyncState },
+    {
+      token,
+      removeToken,
+      orderingPayload,
+      type,
+      setReqState,
+      handleSetSyncState,
+    },
     { dispatch, getState, rejectWithValue },
   ) => {
     handleSetSyncState("add");
@@ -499,6 +545,7 @@ export const APIUpdateDiffTodoTaskIndex = createAsyncThunk(
         "updateOrdering",
         token.token,
         "PATCH",
+        removeToken,
         {
           onSuccess: (data) => {
             //clear the data from the diff

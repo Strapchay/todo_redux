@@ -15,7 +15,6 @@ import {
   completeOrUncompleteTodo,
   deleteTaskForTodo,
   deleteTodo,
-  replaceTodoIndex,
   selectAllTodos,
   selectCurrentTodo,
   setCurrentTodo,
@@ -455,11 +454,16 @@ function TodoListRender({
   }
 
   function handleDragEnd(event) {
-    console.log("the vent drag val", event);
     const { active, over } = event;
     if (active.id !== over.id) {
-      dispatch(replaceTodoIndex({ from: active.id, to: over.id }));
-      dispatch(APIUpdateTodoIndex({ token, handleSyncActive, removeToken }));
+      dispatch(
+        APIUpdateTodoIndex({
+          token,
+          handleSyncActive,
+          removeToken,
+          ordering: { from: active.id, to: over.id },
+        }),
+      );
     }
     setActiveTodoDict({});
   }
@@ -548,7 +552,6 @@ function TodoRenderer() {
   function handleSyncActive() {
     setSyncUIActive(true);
   }
-  console.log("mobile screen val", mobileScreen);
 
   return (
     <div
@@ -629,7 +632,6 @@ function TodoRenderer() {
 
 function SyncUINotifier({ syncUIActive, setSyncUIActive, setSync }) {
   function handleStartSync() {
-    console.log("starting sync...");
     setSync(true);
     setSyncUIActive(false);
   }

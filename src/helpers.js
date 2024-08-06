@@ -15,7 +15,6 @@ async function getDeleteRes(data, requestType) {
     let res;
     try {
       res = await data.json();
-      console.log("the res val", res);
     } catch (_) {
       res = null;
     }
@@ -31,7 +30,6 @@ async function getDeleteRes(data, requestType) {
 export function getInitError(data) {
   if (typeof data === "object") {
     const errorKeys = Object.keys(data);
-    console.log("the error keys", errorKeys);
     if (errorKeys.length === 1) return `${errorKeys}:${data[errorKeys]}`;
     else return `${errorKeys[0]}:${data[errorKeys[0]]}`;
   }
@@ -78,7 +76,6 @@ export function filterToGetTaskBody(getModel, taskId, todoId, clone = true) {
 }
 
 export async function updatePendingTaskOrdering(payload, task, state) {
-  console.log("the task id value", task.taskId);
   const pendingTaskOrdering = [...state.pendingTaskOrdering];
   if (pendingTaskOrdering?.length > 0) {
     const taskOrderingIdUpdateIfCreatedByFallback =
@@ -86,13 +83,11 @@ export async function updatePendingTaskOrdering(payload, task, state) {
         (taskOrder) => taskOrder.id === payload.taskId,
       );
     if (taskOrderingIdUpdateIfCreatedByFallback > -1) {
-      console.log("the pending task ordering v", pendingTaskOrdering);
       pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback] = {
         ...pendingTaskOrdering[taskOrderingIdUpdateIfCreatedByFallback],
         id: task.taskId,
       };
       state.pendingTaskOrdering = [...pendingTaskOrdering];
-      console.log("the pending task ordering after", pendingTaskOrdering);
     }
     // taskOrderingIdUpdateIfCreatedByFallback.id = task.taskId;
   }
@@ -108,7 +103,6 @@ export async function makeAPIRequest(
   extraActions = null,
 ) {
   try {
-    console.log("the token val", token);
     const prepare = {
       method: method,
       headers: {
@@ -126,7 +120,6 @@ export async function makeAPIRequest(
     const data =
       method !== "DELETE" ? await res.json() : await getDeleteRes(res, action);
     if (!res.ok || !successCodes.includes(res.status)) {
-      console.log("the res stat", res.status);
       if (res.status === 401) removeToken?.();
       throw new Error(getInitError(data));
     }

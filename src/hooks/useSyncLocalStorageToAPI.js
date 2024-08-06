@@ -15,7 +15,7 @@ import {
 import toast from "react-hot-toast";
 import { useEffect } from "react";
 import { useCallback } from "react";
-import SyncLocalStorageToAPI from "../dupSyncLocalStorageToAPI";
+import SyncLocalStorageToAPI from "../syncLocalStorageToAPI";
 import {
   APIListTodo,
   setInitialTodoFromLocalStorageOrAPI,
@@ -38,7 +38,7 @@ export function useSyncLocalStorageToAPI(
 
   const makeDispatch = useCallback(
     async (payload, type) => {
-      const dict = { token, ...payload };
+      const dict = { token, removeToken, ...payload };
       if (type === "APICreateDiffTodo") {
         return dispatch(APICreateDiffTodo(dict));
       }
@@ -67,7 +67,6 @@ export function useSyncLocalStorageToAPI(
   }
 
   const completeSyncAndLoadData = useCallback(async () => {
-    console.log("the sync state val", syncLoading);
     if (syncLoading) {
       setSyncLoading(false);
       setSync(false);
@@ -96,6 +95,8 @@ export function useSyncLocalStorageToAPI(
         pendingTodoToUpdate: diff?.todoToUpdate,
         pendingTaskToUpdate: diff?.taskToUpdate,
         //ordering
+        pendingTodoOrdering: diff?.todoOrdering,
+        pendingTaskOrdering: diff?.taskOrdering,
       };
       diffRef.current = diffState;
     } else {
@@ -120,7 +121,6 @@ export function useSyncLocalStorageToAPI(
       createLoader();
       // setSyncLoading(true);
       if (diffRef.current && !syncRef.current) {
-        console.log("trig sync cls");
         const diffState = { ...diffRef.current };
         syncRef.current = new SyncLocalStorageToAPI(
           diffState,

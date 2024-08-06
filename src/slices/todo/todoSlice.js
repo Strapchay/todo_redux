@@ -397,15 +397,26 @@ export const APIDeleteTodo = createAsyncThunk(
 export const APIUpdateTodoIndex = createAsyncThunk(
   "todo/APIUpdateTodoIndex",
   async (
-    { token, removeToken, handleSyncActive },
+    { token, removeToken, ordering, handleSyncActive },
     { dispatch, getState, rejectWithValue },
   ) => {
     const todos = getState().todos.todo;
-    const listItems = [];
-    todos.forEach((todo, i) =>
-      listItems.push({ id: todo.todoId, ordering: i + 1 }),
+    const fromTodoIndex = todos.findIndex(
+      (todo) => todo.todoId === ordering.from,
     );
+    const toTodoIndex = todos.findIndex((todo) => todo.todoId === ordering.to);
 
+    const listItems = [
+      {
+        id: todos[fromTodoIndex].todoId,
+        ordering: todos[toTodoIndex].ordering,
+      },
+      {
+        id: todos[toTodoIndex].todoId,
+        ordering: todos[fromTodoIndex].ordering,
+      },
+    ];
+    dispatch(replaceTodoIndex(ordering));
     const payload = { ordering_list: listItems };
 
     const res = await makeAPIRequest(
@@ -421,8 +432,16 @@ export const APIUpdateTodoIndex = createAsyncThunk(
           persistTodo(todos);
         },
         onError: (_) => {
-          dispatch(todoOrdering(payload));
           const todos = getState().todos;
+          const fallbackPayload = [];
+
+          todos.todo.forEach((todo, i) =>
+            fallbackPayload.push({
+              id: todo.todoId,
+              ordering: todos.todo.length - i,
+            }),
+          );
+          dispatch(todoOrdering(fallbackPayload));
           const diff = getState().diff;
           persistTodo(todos);
           persistDiff(diff);
