@@ -434,7 +434,6 @@ function TodoListRender({
     useContext(AppContext);
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTodoDict, setActiveTodoDict] = useState({});
-  const [formRendered, setFormRendered] = useState(false);
   const dispatch = useDispatch();
   const todos = useSelector(selectAllTodos);
   const currentTodo = useSelector(selectCurrentTodo);

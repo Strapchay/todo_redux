@@ -13,13 +13,11 @@ import {
   setInitialDiffFromLocalStorage,
 } from "../slices/todo/diffSlice";
 import toast from "react-hot-toast";
-import { API } from "../api";
 import { useEffect } from "react";
 import { useCallback } from "react";
 import SyncLocalStorageToAPI from "../dupSyncLocalStorageToAPI";
 import {
   APIListTodo,
-  completeOrUncompleteTodo,
   setInitialTodoFromLocalStorageOrAPI,
 } from "../slices/todo/todoSlice";
 import store from "../store";

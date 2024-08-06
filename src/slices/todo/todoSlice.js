@@ -50,7 +50,7 @@ const todoSlice = createSlice({
         };
       },
       reducer(state, action) {
-        state.todo = [...state.todo, action.payload];
+        state.todo = [action.payload, ...state.todo];
         state.currentTodo = action.payload.todoId;
       },
     },
@@ -72,16 +72,6 @@ const todoSlice = createSlice({
         state.todo = modState;
       },
     },
-    // updateTodoObj: {
-    //   reducer(state, action) {
-    //     const todoIndex = state.todo.findIndex(
-    //       (todo) => todo.todoId === action.payload.todoId,
-    //     );
-    //     const modState = [...state.todo];
-    //     modState.splice(todoIndex, 1, action.payload);
-    //     state.todo = modState;
-    //   },
-    // },
     deleteTodo(state, action) {
       const todoIndex = state.todo.findIndex(
         (todo) => todo.todoId === action.payload.todoId,

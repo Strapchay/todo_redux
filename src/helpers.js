@@ -310,14 +310,7 @@ export const formatLoadedAPIData = function (APIResp) {
     APIResp.forEach((resp) =>
       todoList.push(formatAPIResponseBody(resp, "todo")),
     );
-  console.log("the td l", todoList[0]);
-  const orderedTodoList =
-    todoList.length > 0
-      ? todoList.sort((a, d) => a?.ordering - d?.ordering)
-      : null;
-  if (!orderedTodoList) return todoList;
-
-  return orderedTodoList;
+  return todoList;
 };
 
 export function wrapper(wrapperName, requestBody) {
