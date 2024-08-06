@@ -32,7 +32,6 @@ import {
   DragOverlay,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
@@ -429,10 +428,10 @@ function TodoListRender({
   initFormRendered,
   setInitFormRendered,
   handleSyncActive,
+  gridWidthAndColumnWidth,
 }) {
   const { token, removeToken, mobileScreen, setMobileScreen } =
     useContext(AppContext);
-  const { gridWidthAndColumnWidth } = useScreens();
   const sensors = useSensors(useSensor(PointerSensor));
   const [activeTodoDict, setActiveTodoDict] = useState({});
   const [formRendered, setFormRendered] = useState(false);
@@ -539,7 +538,7 @@ function TodoRenderer() {
     mobileScreen,
     setMobileScreen,
   } = useContext(AppContext);
-
+  const { gridWidthAndColumnWidth } = useScreens();
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
   useEffect(() => {
     if (sync && !syncLoading) {
@@ -550,6 +549,7 @@ function TodoRenderer() {
   function handleSyncActive() {
     setSyncUIActive(true);
   }
+  console.log("mobile screen val", mobileScreen);
 
   return (
     <div
@@ -597,6 +597,7 @@ function TodoRenderer() {
               initFormRendered={initFormRendered}
               setInitFormRendered={setInitFormRendered}
               handleSyncActive={handleSyncActive}
+              gridWidthAndColumnWidth={gridWidthAndColumnWidth}
             />
           ) : (
             ""

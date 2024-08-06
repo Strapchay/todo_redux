@@ -16,7 +16,6 @@ export function useScreens() {
         columnWidth: 160,
         columnCount: 2,
       });
-      // if (mobileScreen) setMobileScreen(false);
     }
     if (
       window.matchMedia("(min-width: 801px) and (max-width: 1000px)").matches
@@ -26,7 +25,6 @@ export function useScreens() {
         width: 250,
         columnWidth: 125,
       }));
-      // if (mobileScreen) setMobileScreen(false);
     }
     if (window.matchMedia("(max-width: 800px)").matches) {
       setGridWidthAndColumnWidth({
@@ -34,7 +32,6 @@ export function useScreens() {
         width: 155,
         columnWidth: 152,
       });
-      // if (mobileScreen) setMobileScreen(false);
     }
     if (
       window.matchMedia("(min-width: 466px) and (max-width: 650px)").matches
@@ -45,7 +42,7 @@ export function useScreens() {
         columnWidth: 195,
       }));
       if (mobileScreen.active)
-        setMobileScreen((v) => ({ ...v, active: false }));
+        setMobileScreen((v) => ({ ...v, active: false, default: false }));
     }
     if (window.matchMedia("(max-width: 465px)").matches) {
       setGridWidthAndColumnWidth((v) => ({
@@ -54,7 +51,7 @@ export function useScreens() {
         columnWidth: 145,
       }));
       if (!mobileScreen.active)
-        setMobileScreen((v) => ({ ...v, active: true }));
+        setMobileScreen((v) => ({ ...v, default: true, active: true }));
     }
     if (window.matchMedia("(max-width: 350px)").matches) {
       setGridWidthAndColumnWidth((v) => ({
@@ -63,7 +60,7 @@ export function useScreens() {
         columnWidth: 145,
       }));
       if (!mobileScreen.active)
-        setMobileScreen((v) => ({ ...v, active: true }));
+        setMobileScreen((v) => ({ ...v, active: true, default: true }));
     }
   }, [mobileScreen, setMobileScreen]);
 

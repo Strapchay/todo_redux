@@ -12,7 +12,6 @@ function AppContextProvider({ children }) {
     "token",
   );
   const [sync, setSync] = useState(true);
-  // const localState = getLocalStates();
   const { startSync, syncLoading, setSyncLoading } = useSyncLocalStorageToAPI(
     token,
     getLocalStates,
@@ -22,7 +21,7 @@ function AppContextProvider({ children }) {
   const navigate = useNavigate();
   const [mobileScreen, setMobileScreen] = useState({
     active: false,
-    default: true,
+    default: false,
   });
 
   //if not authenticated redirect to login page
@@ -65,10 +64,6 @@ function AppContextProvider({ children }) {
 }
 
 function ProtectedRoute() {
-  //render spinner while app is loading
-  //TODO: find value to render app loading spinner
-  // if (isLoading) return <PageLoader />;
-  //|| isAuthenticated == undefined
   return (
     <AppContextProvider>
       <Todo />;
