@@ -11,7 +11,12 @@ import { SwitcherContext } from "../Switcher";
 
 function LoginForm() {
   const { setCurrentForm, currentForm } = useContext(SwitcherContext);
-  const { register, handleSubmit, reset, getValues, formState } = useForm();
+  const { register, handleSubmit, reset, getValues, formState } = useForm({
+    defaultValues: {
+      email: "testuser123@email.com",
+      password: "Testuser123",
+    },
+  });
   const navigate = useNavigate();
   const { token, setToken } = useLocalStorageState(null, "token");
   const { errors } = formState;
