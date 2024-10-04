@@ -6,12 +6,14 @@ import Todo from "./pages/Todo";
 import PageNotFound from "./PageNotFound";
 import ProtectedRoute from "./ProtectedRoute";
 
+const multiplePathToComponent = ["/", "/login"].map((p) => ({
+  path: p,
+  element: <Landing />,
+  errorElement: <Error />,
+}));
+
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Landing />,
-    errorElement: <Error />,
-  },
+  ...multiplePathToComponent,
   {
     element: <ProtectedRoute />,
     errorElement: <Error />,
