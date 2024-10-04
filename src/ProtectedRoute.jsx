@@ -29,7 +29,7 @@ function AppContextProvider({ children }) {
     function () {
       if (!token || !token?.token) {
         //error ||
-        navigate("/login");
+        navigate("/");
       }
     },
     [token, navigate],
@@ -37,7 +37,7 @@ function AppContextProvider({ children }) {
 
   function removeTokenAndLogout() {
     removeToken();
-    navigate("/login");
+    navigate("/");
   }
 
   if (token?.token) {
