@@ -36,6 +36,11 @@
     background-color: #0c0c0c;
 }
 
+.btn-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
 .btn-update {
     border: none;
     border-radius: 0.4rem;
@@ -44,6 +49,18 @@
     transform: translate(-12%, 18%);
     color: var(--color-primary--bg);
     background: #b1b1b1;
+    cursor: pointer;
+    font-size: 1.4rem;
+}
+
+.btn-logout {
+    border: none;
+    border-radius: 0.4rem;
+    height: 2rem;
+    width: 9rem;
+    transform: translate(-12%, 18%);
+    color: whitesmoke;
+    background: #7a7777;
     cursor: pointer;
     font-size: 1.4rem;
 }

@@ -200,6 +200,7 @@ const todoSlice = createSlice({
     },
     setCurrentTodo(state, action) {
       state.currentTodo = action.payload.todoId;
+      console.log("state val", state);
     },
   },
   // extraReducers(builder) {

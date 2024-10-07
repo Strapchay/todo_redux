@@ -4,8 +4,20 @@ import Modal from "../Modal";
 import AuthForm from "./forms/AuthForm";
 import Switcher from "./Switcher";
 import { AUTH_FORMS } from "../constants";
+import { useLocalStorageState } from "../hooks/useLocalStorageState";
+import { useNavigate } from "react-router-dom";
 
 function Landing() {
+  const { token } = useLocalStorageState(null, "token");
+  const navigate = useNavigate();
+
+  useEffect(
+    function () {
+      if (token) navigate("/dashboard");
+    },
+    [token, navigate],
+  );
+
   useEffect(() => {
     document.documentElement.classList.add("html");
     document.body.classList.add("body");

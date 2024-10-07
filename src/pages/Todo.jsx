@@ -320,6 +320,7 @@ function TodoListItem({
   }
 
   function setTodoAsCurrentTodo() {
+    console.log("got cicked to set cur todo");
     dispatch(setCurrentTodo({ todoId: todo?.todoId }));
     if (!initFormRendered) setInitFormRendered(true);
   }
@@ -551,6 +552,7 @@ function TodoRenderer() {
     setSync,
     mobileScreen,
     setMobileScreen,
+    removeToken,
   } = useContext(AppContext);
   const { gridWidthAndColumnWidth } = useScreens();
   const { currentForm, setCurrentForm } = useContext(SwitcherContext);
@@ -583,15 +585,20 @@ function TodoRenderer() {
             </p>
           )}
           <p className={styles["navbar-header-title"]}>TD App</p>
-          <button
-            onClick={() => {
-              setUpdaterActive((v) => !v);
-              currentForm && setCurrentForm("");
-            }}
-            className={styles["btn-update"]}
-          >
-            Update Info
-          </button>
+          <div className={styles["btn-actions"]}>
+            <button
+              onClick={() => {
+                setUpdaterActive((v) => !v);
+                currentForm && setCurrentForm("");
+              }}
+              className={styles["btn-update"]}
+            >
+              Update Info
+            </button>
+            <button onClick={removeToken} className={styles["btn-logout"]}>
+              Logout
+            </button>
+          </div>
         </nav>
       </header>
 
