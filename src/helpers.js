@@ -344,3 +344,9 @@ export function formatBatchCreatedReturnData(returnData, objType) {
 
   return formattedReturnedData;
 }
+
+export function moveCursorToTextEnd(textContainer) {
+  const selection = document.getSelection();
+  selection.selectAllChildren(textContainer);
+  selection.collapseToEnd();
+}

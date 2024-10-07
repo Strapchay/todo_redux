@@ -46,6 +46,8 @@ import UpdateInfoForm from "./forms/UpdateInfoForm";
 import UpdatePwdForm from "./forms/UpdatePwdForm";
 import Switcher, { SwitcherContext } from "./Switcher";
 import { useScreens } from "../hooks/useScreens";
+import { useRef } from "react";
+import { moveCursorToTextEnd } from "../helpers";
 
 function Todo() {
   useEffect(() => {
@@ -77,9 +79,16 @@ function TaskAddInput({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  const inputRef = useRef(null);
 
   const dispatch = useDispatch();
   const completed = task?.completed;
+
+  useEffect(() => {
+    inputRef.current.textContent = task?.task ?? "";
+    moveCursorToTextEnd(inputRef.current);
+  }, [task]);
+
   function handleTaskUpdate(e) {
     if (e.type === "keyup" && e.key === "Enter") {
       e.preventDefault();
@@ -151,8 +160,9 @@ function TaskAddInput({
         suppressContentEditableWarning={true}
         className={styles["form-task-td"]}
         onKeyUp={handleTaskUpdate}
+        ref={inputRef}
       >
-        {task?.task ?? ""}
+        {/* {task?.task ?? ""} */}
       </div>
     </div>
   );
@@ -225,6 +235,12 @@ function TaskContentRender({ initFormRendered, handleSyncActive }) {
     completeActiveDict,
     currentTodo,
   } = useTaskRender(handleSyncActive);
+  const titleRef = useRef(null);
+
+  useEffect(() => {
+    titleRef.current.textContent = currentTodo?.title ?? "";
+    moveCursorToTextEnd(titleRef.current);
+  }, [currentTodo]);
 
   return (
     <div
@@ -242,8 +258,9 @@ function TaskContentRender({ initFormRendered, handleSyncActive }) {
               className={styles["td-render-title"]}
               placeholder="Untitled"
               onKeyUp={handleTitleUpdate}
+              ref={titleRef}
             >
-              {currentTodo?.title}
+              {/* {currentTodo?.title} */}
             </div>
           </div>
           <div className={styles["td-render-component-container"]}>
@@ -501,19 +518,20 @@ function TodoListRender({
               >
                 {({ columnIndex, rowIndex, style, data, columnCount }) => {
                   const todo = data[rowIndex * 2 + columnIndex];
-                  return (
-                    <TodoListItem
-                      currentTodo={currentTodo}
-                      id={todo?.todoId}
-                      todo={todo}
-                      todoTasks={todo?.task}
-                      key={todo?.todoId}
-                      setInitFormRendered={setInitFormRendered}
-                      initFormRendered={initFormRendered}
-                      handleSyncActive={handleSyncActive}
-                      style={style}
-                    />
-                  );
+                  if (todo)
+                    return (
+                      <TodoListItem
+                        currentTodo={currentTodo}
+                        id={todo?.todoId}
+                        todo={todo}
+                        todoTasks={todo?.task}
+                        key={todo?.todoId}
+                        setInitFormRendered={setInitFormRendered}
+                        initFormRendered={initFormRendered}
+                        handleSyncActive={handleSyncActive}
+                        style={style}
+                      />
+                    );
                 }}
               </Grid>
             </SortableContext>
