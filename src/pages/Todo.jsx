@@ -235,12 +235,6 @@ function TaskContentRender({ initFormRendered, handleSyncActive }) {
     completeActiveDict,
     currentTodo,
   } = useTaskRender(handleSyncActive);
-  const titleRef = useRef(null);
-
-  useEffect(() => {
-    titleRef.current.textContent = currentTodo?.title ?? "";
-    moveCursorToTextEnd(titleRef.current);
-  }, [currentTodo]);
 
   return (
     <div
@@ -258,9 +252,8 @@ function TaskContentRender({ initFormRendered, handleSyncActive }) {
               className={styles["td-render-title"]}
               placeholder="Untitled"
               onKeyUp={handleTitleUpdate}
-              ref={titleRef}
             >
-              {/* {currentTodo?.title} */}
+              {currentTodo?.title}
             </div>
           </div>
           <div className={styles["td-render-component-container"]}>
