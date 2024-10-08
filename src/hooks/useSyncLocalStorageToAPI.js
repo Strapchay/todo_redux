@@ -78,9 +78,7 @@ export function useSyncLocalStorageToAPI(
         removeLoader();
 
         //save diff state after diffing
-        // const currentDiffState = diffRef.current;
         if (syncDiff) {
-          console.log("the diff state passed to complete sync", syncDiff);
           const diffStateToUpdate = {
             todoToCreate: syncDiff.pendingTodos,
             taskToCreate: syncDiff.pendingTasks,
