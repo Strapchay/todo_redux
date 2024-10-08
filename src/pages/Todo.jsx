@@ -334,7 +334,6 @@ function TodoListItem({
       {...attributes}
       className={styles["component-container--box"]}
       data-id={todo?.todoId}
-      onClick={setTodoAsCurrentTodo}
     >
       <span className={styles["nudge-btn"]}>
         <BiDotsVertical size={20} />
@@ -390,11 +389,15 @@ function TodoListItem({
             styles["component-heading"],
             styles[todo?.completed ? "strike-through-task" : ""],
           ].join(" ")}
+          onClick={setTodoAsCurrentTodo}
         >
           {formatItemHeading(todo)}
         </h3>
       </div>
-      <div className={styles["component-content-container"]}>
+      <div
+        className={styles["component-content-container"]}
+        onClick={setTodoAsCurrentTodo}
+      >
         <ul>
           {todoTasks?.slice(0, 3).map((task) => (
             <div
