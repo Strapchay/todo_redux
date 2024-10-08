@@ -12,6 +12,7 @@ import {
   getOrderingUrlFromType,
   makeAPIRequest,
   persistDiff,
+  persistTodo,
   updatePendingTaskOrdering,
 } from "../../helpers";
 import { API } from "../../api";
@@ -180,7 +181,9 @@ export const APICreateDiffTodo = createAsyncThunk(
           dispatch(clearTodoItem({ todoToCreate: [] }));
           setReqState();
           const diff = getState().diff;
+          const todo = getState().todos;
           persistDiff(diff);
+          persistTodo(todo);
           handleSetSyncState("remove");
         },
         onError: () => {
@@ -227,6 +230,8 @@ export const APIDeleteDiffTodo = createAsyncThunk(
             setReqState();
             const diff = getState().diff;
             persistDiff(diff);
+            const todo = getState().todos;
+            persistTodo(todo);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
@@ -278,6 +283,8 @@ export const APIUpdateDiffTodo = createAsyncThunk(
             setReqState();
             const diff = getState().diff;
             persistDiff(diff);
+            const todo = getState().todos;
+            persistTodo(todo);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
@@ -329,6 +336,8 @@ export const APIUpdateDiffTodoIndex = createAsyncThunk(
             setReqState();
             const diff = getState().diff;
             persistDiff(diff);
+            const todo = getState().todos;
+            persistTodo(todo);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
@@ -403,6 +412,10 @@ export const APICreateDiffTodoTask = createAsyncThunk(
                 comp._diffState,
               );
               // updateOrderingState(payloadId, formattedReturnedData[i]);
+              const diff = getState().diff;
+              persistDiff(diff);
+              const todo = getState().todos;
+              persistTodo(todo);
               handleSetSyncState("remove");
             });
           },
@@ -451,6 +464,8 @@ export const APIDeleteDiffTodoTask = createAsyncThunk(
             setReqState();
             const diff = getState().diff;
             persistDiff(diff);
+            const todo = getState().todos;
+            persistTodo(todo);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
@@ -502,6 +517,8 @@ export const APIUpdateDiffTodoTask = createAsyncThunk(
             setReqState();
             const diff = getState().diff;
             persistDiff(diff);
+            const todo = getState().todos;
+            persistTodo(todo);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },
@@ -553,6 +570,8 @@ export const APIUpdateDiffTodoTaskIndex = createAsyncThunk(
             setReqState(type);
             const diff = getState().diff;
             persistDiff(diff);
+            const todo = getState().todos;
+            persistTodo(todo);
             // persistDiff(pendingState);
             handleSetSyncState("remove");
           },

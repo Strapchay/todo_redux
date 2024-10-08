@@ -9,6 +9,7 @@ import {
   APIUpdateDiffTodoIndex,
   APIUpdateDiffTodoTask,
   APIUpdateDiffTodoTaskIndex,
+  clearTodoItem,
   deactivateDiff,
   setInitialDiffFromLocalStorage,
 } from "../slices/todo/diffSlice";
@@ -21,6 +22,7 @@ import {
   setInitialTodoFromLocalStorageOrAPI,
 } from "../slices/todo/todoSlice";
 import store from "../store";
+import { persistDiff } from "../helpers";
 
 export function useSyncLocalStorageToAPI(
   token,
@@ -66,16 +68,37 @@ export function useSyncLocalStorageToAPI(
     return store.getState().todos;
   }
 
-  const completeSyncAndLoadData = useCallback(async () => {
-    if (syncLoading) {
-      setSyncLoading(false);
-      setSync(false);
-      syncRef.current = null;
-      dispatch(deactivateDiff());
-      removeLoader();
-      // setLocalDataAdded(false);}
-    }
-  }, [dispatch, syncLoading, setSync]);
+  const completeSyncAndLoadData = useCallback(
+    async (syncDiff) => {
+      if (syncLoading) {
+        setSyncLoading(false);
+        setSync(false);
+        syncRef.current = null;
+        dispatch(deactivateDiff());
+        removeLoader();
+
+        //save diff state after diffing
+        // const currentDiffState = diffRef.current;
+        if (syncDiff) {
+          console.log("the diff state passed to complete sync", syncDiff);
+          const diffStateToUpdate = {
+            todoToCreate: syncDiff.pendingTodos,
+            taskToCreate: syncDiff.pendingTasks,
+            todoToDelete: syncDiff.pendingTodosToDelete,
+            taskToDelete: syncDiff.pendingTasksToDelete,
+            todoToUpdate: syncDiff.pendingTodoToUpdate,
+            taskToUpdate: syncDiff.pendingTaskToUpdate,
+            todoOrdering: syncDiff.pendingTodoOrdering,
+            taskOrdering: syncDiff.pendingTaskOrdering,
+          };
+          dispatch(clearTodoItem({ payload: diffStateToUpdate }));
+          persistDiff(diffStateToUpdate);
+        }
+        // setLocalDataAdded(false);}
+      }
+    },
+    [dispatch, syncLoading, setSync],
+  );
 
   useEffect(() => {
     const initDb = async () => {

@@ -47,9 +47,6 @@ class SyncLocalStorageToAPI {
     this._filterProperties();
     this._createPropertiesPayload();
     this._makePropertiesRequest();
-
-    //try to complete sync if no data is to be synced after request
-    this._completeSync();
   }
 
   _filterProperties() {
@@ -88,6 +85,9 @@ class SyncLocalStorageToAPI {
       this._toCreatePendingState.createPendingTasksToUpdate,
       "task",
     );
+
+    //filter and remove pending tasks that are to be created in create todo from tasks to be created
+    // this._refilterTasksToCreateAndUpdate(todoToCreatePayload, taskToCreatePayload, taskToUpdatePayload)
   }
 
   _createPropertiesPayload() {
@@ -96,6 +96,7 @@ class SyncLocalStorageToAPI {
       this._diffState.pendingTodos,
       this._toCreatePendingState.createPendingTodos,
       this._toCreatePayloadState.createTodoPayload,
+      this._to,
     );
 
     //create todo to update payload
@@ -124,6 +125,7 @@ class SyncLocalStorageToAPI {
 
     //task not linked to todos to create payload body
     this._createTaskLinkedToAPITodoBody(
+      this._toCreatePayloadState.createTodoPayload,
       this._diffState.pendingTasks,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodo,
       this._toCreatePayloadState.createTaskPayload,
@@ -131,6 +133,7 @@ class SyncLocalStorageToAPI {
 
     //sort tasks which are to be updated not in createPendingTaskLinkedToAPITodo Array
     this._createTaskToUpdateBody(
+      this._toCreatePayloadState.createTodoPayload,
       this._diffState.pendingTaskToUpdate,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodoToUpdate,
       this._toCreatePendingState.createPendingTaskLinkedToAPITodo,
@@ -179,6 +182,9 @@ class SyncLocalStorageToAPI {
       this._diffState.pendingTaskOrdering,
       "task",
     );
+
+    //try to complete sync if no data is to be synced after request
+    this._completeSync(this._diffState);
   }
 
   async _makeTodoCreateRequest(createTodoPayload, pendingTodos) {
@@ -197,7 +203,7 @@ class SyncLocalStorageToAPI {
         },
         "APICreateDiffTodo",
       );
-    }
+    } else setPendingCreatesToNull.bind(this)();
   }
 
   async _makeTodoDeleteRequest(pendingTodosToDelete) {
@@ -215,7 +221,7 @@ class SyncLocalStorageToAPI {
         },
         "APIDeleteDiffTodo",
       );
-    }
+    } else setPendingDeletesToNull.bind(this)();
   }
 
   async _makeTodoUpdateRequest(createTodoToUpdatePayload, pendingTodoToUpdate) {
@@ -233,7 +239,7 @@ class SyncLocalStorageToAPI {
         },
         "APIUpdateDiffTodo",
       );
-    }
+    } else setPendingUpdatesToNull.bind(this)();
   }
 
   async _makeTaskToCreateRequest(createTasksPayload, pendingTasks) {
@@ -255,7 +261,7 @@ class SyncLocalStorageToAPI {
         },
         "APICreateDiffTodoTask",
       );
-    }
+    } else setPendingCreatesToNull.bind(this)();
   }
 
   async _makeTaskToDeleteRequest(pendingTasksToDelete) {
@@ -274,7 +280,7 @@ class SyncLocalStorageToAPI {
         },
         "APIDeleteDiffTodoTask",
       );
-    }
+    } else setPendingDeletesNull.bind(this)();
   }
 
   async _makeTaskToUpdateRequest(
@@ -282,7 +288,7 @@ class SyncLocalStorageToAPI {
     pendingTaskToUpdate,
   ) {
     function setPendingUpdatesNull() {
-      this._diffState.taskToUpdate = [];
+      this._diffState.pendingTaskToUpdate = [];
     }
     //create batch taskToUpdate
     const taskToUpdateLength = createTaskToUpdatePayload?.payload?.length;
@@ -295,7 +301,7 @@ class SyncLocalStorageToAPI {
         },
         "APIUpdateDiffTodoTask",
       );
-    }
+    } else setPendingUpdatesNull.bind(this)();
   }
 
   async _makeOrderingUpdateRequest(orderingPayload, type) {
@@ -352,6 +358,14 @@ class SyncLocalStorageToAPI {
     }
   }
 
+  // _refilterTasksToCreateAndUpdate(
+  //   todoToCreatePayload,
+  //   taskToCreatePayload,
+  //   taskToUpdatePayload,
+  // ) {
+  //   if(todoToCreatePayload)
+  // }
+
   _createTodoPayload(
     todoToCreateDiffArray,
     todoToCreateFilteredArray,
@@ -368,16 +382,19 @@ class SyncLocalStorageToAPI {
         const todoModelIndex = modelTodos.findIndex(
           (modelTodo) => modelTodo.todoId === todo,
         );
-        const todoBody = cloneDeep(modelTodos[todoModelIndex]);
+        const todoVal = modelTodos?.[todoModelIndex];
+        if (todoVal) {
+          const todoBody = cloneDeep(todoVal);
 
-        todoToCreatePayloadArray.ids.push(todoBody.todoId);
-        //remove ids from todo and tasks
-        delete todoBody.todoId;
-        if (todoBody.tasks?.length > 0)
-          todoBody.tasks.forEach((task) => delete task.taskId);
-        //add formatted data to todos to create
-        const formattedTodoBody = formatAPIRequestBody(todoBody, "todo");
-        todoToCreatePayloadArray["payload"].push(formattedTodoBody);
+          todoToCreatePayloadArray.ids.push(todoBody.todoId);
+          //remove ids from todo and tasks
+          delete todoBody.todoId;
+          if (todoBody.tasks?.length > 0)
+            todoBody.tasks.forEach((task) => delete task.taskId);
+          //add formatted data to todos to create
+          const formattedTodoBody = formatAPIRequestBody(todoBody, "todo");
+          todoToCreatePayloadArray["payload"].push(formattedTodoBody);
+        }
       });
     else {
       this._diffState.todoToCreate = [];
@@ -434,6 +451,7 @@ class SyncLocalStorageToAPI {
   }
 
   _createTaskLinkedToAPITodoBody(
+    todoToCreatePayloadObject,
     taskToCreateDiffArray,
     pendingTaskLinkedToAPITodoArray,
     taskToCreatePayloadArray,
@@ -442,34 +460,47 @@ class SyncLocalStorageToAPI {
     if (
       taskToCreateDiffArray?.length > 0 &&
       pendingTaskLinkedToAPITodoArray.length > 0
-    )
-      pendingTaskLinkedToAPITodoArray.forEach((task) => {
-        const taskBody = filterToGetTaskBody(
-          this._getModelState.bind(this),
-          task.taskId,
-          task.todoId,
+    ) {
+      //first remove tasks linked to todoToCreate if it still exists
+      const pendingLinkedTaskNotInTodoToCreate =
+        pendingTaskLinkedToAPITodoArray.filter(
+          (task, i) =>
+            !todoToCreatePayloadObject.ids.find((id) => id === task.todoId) &&
+            task,
         );
+      pendingTaskLinkedToAPITodoArray = [...pendingLinkedTaskNotInTodoToCreate];
 
-        taskToCreatePayloadArray.ids.push({
-          taskId: task.taskId,
-          todoId: task.todoId,
+      if (pendingTaskLinkedToAPITodoArray.length)
+        pendingTaskLinkedToAPITodoArray.forEach((task) => {
+          const taskBody = filterToGetTaskBody(
+            this._getModelState.bind(this),
+            task.taskId,
+            task.todoId,
+          );
+          if (taskBody) {
+            taskToCreatePayloadArray.ids.push({
+              taskId: task.taskId,
+              todoId: task.todoId,
+            });
+
+            //add todoId to taskBody
+            taskBody.todoId = task.todoId;
+            //remove id from task
+            delete taskBody.taskId;
+            //add formatted data to tasks to create
+            taskToCreatePayloadArray.payload.push(
+              formatAPIRequestBody(taskBody, "task", "create"),
+            );
+          }
         });
-
-        //add todoId to taskBody
-        taskBody.todoId = task.todoId;
-        //remove id from task
-        delete taskBody.taskId;
-        //add formatted data to tasks to create
-        taskToCreatePayloadArray.payload.push(
-          formatAPIRequestBody(taskBody, "task", "create"),
-        );
-      });
-    else {
+      else this._diffState.taskToCreate = [];
+    } else {
       this._diffState.taskToCreate = [];
     }
   }
 
   _createTaskToUpdateBody(
+    todoToCreatePayload,
     taskToUpdateDiffArray,
     pendingTaskLinkedToAPITodoToUpdate,
     pendingTaskLinkedToAPITodo,
@@ -479,35 +510,50 @@ class SyncLocalStorageToAPI {
     if (
       taskToUpdateDiffArray?.length > 0 &&
       pendingTaskLinkedToAPITodoToUpdate?.length > 0
-    )
-      pendingTaskLinkedToAPITodoToUpdate.forEach((task) => {
-        // const taskToUpdateExists
-        const taskToUpdateExistsInTaskAPITodo = pendingTaskLinkedToAPITodo.some(
-          (APITodoTask) => APITodoTask.taskId === task.taskId,
-        );
+    ) {
+      const pendingTaskLinkedToUpdateNotInTodoToCreate =
+        pendingTaskLinkedToAPITodoToUpdate
+          .filter(
+            (task) =>
+              !todoToCreatePayload.ids.find((id) => id === task.taskId) && task,
+          )
+          .filter((task) => task);
 
-        if (!taskToUpdateExistsInTaskAPITodo) {
-          const taskBody = filterToGetTaskBody(
-            this._getModelState.bind(this),
-            task.taskId,
-            task.todoId,
-          );
-          // taskBody.todoId = task.todoId
-          taskToUpdatePayloadArray.ids.push({
-            taskId: task.taskId,
-            todoId: task.todoId,
-          });
+      pendingTaskLinkedToAPITodoToUpdate = [
+        ...pendingTaskLinkedToUpdateNotInTodoToCreate,
+      ];
 
-          //add the time added to the taskBody
-          taskBody.todoLastAdded = task.todoLastAdded;
-          //remove id from task
-          // delete taskBody.taskId
-          taskToUpdatePayloadArray.payload.push(
-            formatAPIRequestBody(taskBody, "task", "update"),
-          );
-        }
-      });
-    else {
+      if (pendingTaskLinkedToAPITodoToUpdate.length)
+        pendingTaskLinkedToAPITodoToUpdate.forEach((task) => {
+          // const taskToUpdateExists
+          const taskToUpdateExistsInTaskAPITodo =
+            pendingTaskLinkedToAPITodo.some(
+              (APITodoTask) => APITodoTask.taskId === task.taskId,
+            );
+
+          if (!taskToUpdateExistsInTaskAPITodo) {
+            const taskBody = filterToGetTaskBody(
+              this._getModelState.bind(this),
+              task.taskId,
+              task.todoId,
+            );
+            // taskBody.todoId = task.todoId
+            taskToUpdatePayloadArray.ids.push({
+              taskId: task.taskId,
+              todoId: task.todoId,
+            });
+
+            //add the time added to the taskBody
+            taskBody.todoLastAdded = task.todoLastAdded;
+            //remove id from task
+            // delete taskBody.taskId
+            taskToUpdatePayloadArray.payload.push(
+              formatAPIRequestBody(taskBody, "task", "update"),
+            );
+          }
+        });
+      else this._diffState.taskToUpdate = [];
+    } else {
       this._diffState.taskToUpdate = [];
     }
   }

@@ -234,6 +234,7 @@ function TaskContentRender({ initFormRendered, handleSyncActive }) {
     incompleteActiveDict,
     completeActiveDict,
     currentTodo,
+    titleRef,
   } = useTaskRender(handleSyncActive);
 
   return (
@@ -252,6 +253,7 @@ function TaskContentRender({ initFormRendered, handleSyncActive }) {
               className={styles["td-render-title"]}
               placeholder="Untitled"
               onKeyUp={handleTitleUpdate}
+              ref={titleRef}
             >
               {currentTodo?.title}
             </div>
@@ -298,7 +300,7 @@ function TodoListItem({
   style: gridStyle = {},
 }) {
   const dispatch = useDispatch();
-  const { token, removeToken } = useContext(AppContext);
+  const { token, removeToken, setMobileScreen } = useContext(AppContext);
   const gap = TODO_LIST_GAP;
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
@@ -320,8 +322,8 @@ function TodoListItem({
   }
 
   function setTodoAsCurrentTodo() {
-    console.log("got cicked to set cur todo");
     dispatch(setCurrentTodo({ todoId: todo?.todoId }));
+    setMobileScreen((v) => ({ ...v, default: false }));
     if (!initFormRendered) setInitFormRendered(true);
   }
 
@@ -505,13 +507,19 @@ function TodoListRender({
                 columnCount={gridWidthAndColumnWidth.columnCount}
                 columnWidth={gridWidthAndColumnWidth.columnWidth}
                 rowHeight={110}
-                rowCount={Math.ceil((todos.length ?? 0) / 2)}
+                rowCount={Math.ceil(
+                  (todos.length ?? 0) / gridWidthAndColumnWidth.columnCount,
+                )}
                 itemData={todos}
                 itemSize={35}
                 width={gridWidthAndColumnWidth.width}
               >
                 {({ columnIndex, rowIndex, style, data, columnCount }) => {
-                  const todo = data[rowIndex * 2 + columnIndex];
+                  const todo =
+                    data[
+                      rowIndex * gridWidthAndColumnWidth.columnCount +
+                        columnIndex
+                    ];
                   if (todo)
                     return (
                       <TodoListItem
@@ -634,14 +642,14 @@ function TodoRenderer() {
           )}
           {updaterActive && <UpdateInfoComponent />}
 
-          {syncLoading && (
+          {/* {syncLoading && (
             <Modal>
               <Modal.Open opens="sync-loader" click={false}></Modal.Open>
               <Modal.Window name="sync-loader">
                 <div></div>
               </Modal.Window>
             </Modal>
-          )}
+          )} */}
         </div>
       </div>
     </div>
@@ -649,7 +657,10 @@ function TodoRenderer() {
 }
 
 function SyncUINotifier({ syncUIActive, setSyncUIActive, setSync }) {
+  const { mobileScreen, setMobileScreen } = useContext(AppContext);
   function handleStartSync() {
+    if (mobileScreen.active && !mobileScreen.default)
+      setMobileScreen((v) => ({ ...v, default: true }));
     setSync(true);
     setSyncUIActive(false);
   }

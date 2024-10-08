@@ -10,10 +10,13 @@ import {
   updateTodo,
 } from "../slices/todo/todoSlice";
 import { AppContext } from "../ProtectedRoute";
+import { useRef } from "react";
+import { useEffect } from "react";
 
 export function useTaskRender(handleSyncActive) {
   const { token, removeToken } = useContext(AppContext);
   const [title, setTitle] = useState("");
+  const titleRef = useRef(null);
 
   const [incompleteActiveDict, setIncompleteActiveDict] = useState(null);
   const [completeActiveDict, setCompleteActiveDict] = useState(null);
@@ -29,10 +32,15 @@ export function useTaskRender(handleSyncActive) {
   const incompletedTasksIdList = incompletedTasks?.map((task) => task.taskId);
   const completedTasksIdList = completedTasks?.map((task) => task.taskId);
 
+  useEffect(() => {
+    if (!title && titleRef.current && titleRef.current.children.length)
+      titleRef.current.textContent = "";
+  }, [title]);
+
   function handleTitleUpdate(e) {
     e.preventDefault();
     if (e.key !== "Enter") setTitle(e.target.textContent.trim());
-    else {
+    else if (e.key === "Enter" && e.target.textContent.trim()) {
       dispatch(updateTodo({ ...currentTodo, title }));
       dispatch(
         APIUpdateTodoTitle({
@@ -110,5 +118,7 @@ export function useTaskRender(handleSyncActive) {
     completeActiveDict,
     incompleteActiveDict,
     currentTodo,
+    title,
+    titleRef,
   };
 }

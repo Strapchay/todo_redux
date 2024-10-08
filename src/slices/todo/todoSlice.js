@@ -31,13 +31,9 @@ const todoSlice = createSlice({
   initialState,
   reducers: {
     setInitialTodoFromLocalStorageOrAPI(state, action) {
-      console.log("the actions payload", action);
       const isArray = Array.isArray(action.payload);
       if (!isArray) return { ...action.payload };
-      else {
-        console.log("trig else vaue");
-        return action.payload;
-      }
+      else return action.payload;
     },
     replaceTodos(state, action) {
       state.todo = [...action.payload];
@@ -200,7 +196,6 @@ const todoSlice = createSlice({
     },
     setCurrentTodo(state, action) {
       state.currentTodo = action.payload.todoId;
-      console.log("state val", state);
     },
   },
   // extraReducers(builder) {

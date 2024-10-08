@@ -47,7 +47,6 @@ function UpdateInfoForm() {
           },
         );
         reset(user);
-        console.log("the user value", user);
       }
     }
     getUser();

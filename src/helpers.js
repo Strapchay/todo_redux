@@ -61,12 +61,12 @@ export function filterToGetTaskBody(getModel, taskId, todoId, clone = true) {
   const todoModelIndex = modelTodos.findIndex(
     (modelTodo) => modelTodo.todoId === todoId,
   );
-  const taskIndex = modelTodos[todoModelIndex].task.findIndex(
+  const taskIndex = modelTodos?.[todoModelIndex]?.task?.findIndex(
     (modelTask) => modelTask.taskId === taskId,
   );
-  if (!clone) return modelTodos[todoModelIndex].task[taskIndex];
+  if (!clone) return modelTodos?.[todoModelIndex]?.task[taskIndex];
 
-  const task = modelTodos[todoModelIndex]?.task[taskIndex];
+  const task = modelTodos?.[todoModelIndex]?.task[taskIndex];
 
   if (task) {
     const taskBody = JSON.parse(JSON.stringify(task));
@@ -126,7 +126,6 @@ export async function makeAPIRequest(
     if (extraActions) extraActions.onSuccess(data);
     return data;
   } catch (err) {
-    console.log("triggered the error", err);
     if (extraActions)
       extraActions.onError(action === "deleteTodo" ? err?.message : null);
     throw new Error(err.message);
